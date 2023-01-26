@@ -9,14 +9,7 @@ exports.getMessageList = (req, res) => {
 };
 
 exports.postAddMessage = (req, res, next) => {
-	const message = req.body.message;
-	const author = req.body.author;
-	const newMessage = new Message({
-		message: message,
-		author: author,
-	});
-	newMessage
-		.save()
+	Message.insertMany(req.body)
 		.then(() => {
 			res.status(201).json({
 				message: 'The message has been successfully added.',
