@@ -8,7 +8,7 @@ exports.getMessageList = (req, res) => {
 		.catch((err) => console.log(err));
 };
 
-exports.postAddMessage = (req, res, next) => {
+exports.postAddMessage = (req, res) => {
 	Message.insertMany(req.body)
 		.then(() => {
 			res.status(201).json({
