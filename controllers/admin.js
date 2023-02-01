@@ -21,5 +21,5 @@ exports.getMessageList = (req, res) => {
 exports.postAddMessage = async (req, res) => {
 	const results = await checkSimilarity(req.body);
 	
-	res.status(200).json({message: 'The request has been successfully processed.', results: results});
+	res.status(200).json(results);
 };
