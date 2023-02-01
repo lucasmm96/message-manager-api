@@ -1,4 +1,5 @@
 const Message = require('../models/message');
+const { checkSimilarity } = require('../util/js/similarity');
 
 exports.getMessageById = (req, res) => {
 	const id = req.params.messageId;
@@ -17,16 +18,8 @@ exports.getMessageList = (req, res) => {
 		.catch((err) => console.log(err));
 };
 
-const { checkSimilarity } = require('../util/js/similarity');
 exports.postAddMessage = async (req, res) => {
-	const newRecord = {
-		message: req.body.message,
-		author: req.body.author,
-	};
-
-	console.log('checkSimilarity: ', await checkSimilarity(newRecord));
+	const results = await checkSimilarity(req.body);
 	
-	
-	res.status(200).json({});
-
+	res.status(200).json({message: 'The request has been successfully processed.', results: results});
 };

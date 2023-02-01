@@ -1,31 +1,39 @@
 const howSimilar = require('similarity');
 const Message = require('../../models/message');
 
-exports.checkSimilarity = async (newRecord) => {
-	const acceptedData = [];
-	const rejectedData = [];
-	const data = await Message.find();
+exports.checkSimilarity = async (newMessages) => {
+	const acceptedMessages = [];
+	const rejectedMessages = [];
+	const currentMessages = await Message.find();
 
-	data.forEach((currentRecord) => {
-		if (howSimilar(currentRecord.message, newRecord.message) > 0.5) {
-			rejectedData.push({
-				current_record: {
-					id: currentRecord.id,
-					message: currentRecord.message,
-					author: currentRecord.author,
-				},
-				new_record: {
-					message: newRecord.message,
-					author: newRecord.author,
-				},
-			});
+	newMessages.map((newMessage) => {
+		currentMessages.map((currentMessage) => {
+			let similarity = howSimilar(currentMessage.message, newMessage.message);
+
+			if (similarity > 0.5) {
+				let similarTo = {
+					message: currentMessage.message,
+					ratio: `${Math.round(similarity * 100)}%`,
+				};
+				if (rejectedMessages.length > 0) {
+					if (
+						rejectedMessages[rejectedMessages.length - 1].message === newMessage.message) {
+						rejectedMessages[rejectedMessages.length - 1].similarTo.push(similarTo);
+					} else {
+						rejectedMessages.push({ message: newMessage.message, similarTo: [similarTo] });
+					}
+				} else {
+					rejectedMessages.push({ message: newMessage.message, similarTo: [similarTo] });
+				}
+			}
+		});
+
+		const rejectedMessagesLength = rejectedMessages.length > 0;
+		const isRejected = rejectedMessages[rejectedMessages.length - 1].message !== newMessage.message;
+		if (rejectedMessagesLength && isRejected) {
+			acceptedMessages.push(newMessage);
 		}
 	});
-	if (rejectedData.length === 0) {
-		acceptedData.push({
-			message: newRecord.message,
-			author: newRecord.author,
-		});
-	}
-	return { acceptedData, rejectedData };
+
+	return { acceptedMessages, rejectedMessages };
 };
