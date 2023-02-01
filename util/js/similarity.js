@@ -40,7 +40,7 @@ exports.checkSimilarity = async (newMessages) => {
 
 	if (rejectedMessages.length > 0) {
 		message = 'The request was rejected due to similarities found.';
-		return { message: message, results: { rejectedMessages } };
+		return { message: message, results: { acceptedMessages, rejectedMessages } };
 	} else {
 		rejectedMessages = [];
 	}
