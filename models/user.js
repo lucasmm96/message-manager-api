@@ -20,7 +20,7 @@ userSchema.methods.addMessage = function (messageId, addedAt, postedAt) {
 		addedAt: addedAt,
 		postedAt: postedAt,
 	};
-	this.books.push(newMessage);
+	this.messages.push(newMessage);
 	return this.save();
 };
 
