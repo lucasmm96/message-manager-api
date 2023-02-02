@@ -48,6 +48,8 @@ exports.checkSimilarity = async (newMessages) => {
 	const currentMessages = await Message.find();
 
 	newMessages.map((newMessage) => {
+		let addedAt = new Date().toISOString().slice(0,10);
+		newMessage = { ...newMessage, addedAt: addedAt, postedAt: '', postUrl: '' };
 		currentMessages.map((currentMessage) => {
 			let similarity = howSimilar(currentMessage.message, newMessage.message);
 
