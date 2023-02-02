@@ -42,7 +42,7 @@ exports.checkSimilarity = async (newMessages) => {
 		message = 'The request was rejected due to similarities found.';
 		return { message: message, results: { acceptedMessages, rejectedMessages } };
 	} else {
-		rejectedMessages = [];
+		rejectedMessages.length = 0
 	}
 
 	const currentMessages = await Message.find();
@@ -69,10 +69,12 @@ exports.checkSimilarity = async (newMessages) => {
 			}
 		});
 
-		const rejectedMessagesLength = rejectedMessages.length > 0;
-		const isRejected = rejectedMessages[rejectedMessages.length - 1].message !== newMessage.message;
-		if (rejectedMessagesLength && isRejected) {
+		if (rejectedMessages.length === 0) {
 			acceptedMessages.push(newMessage);
+		} else {
+			if (rejectedMessages[rejectedMessages.length - 1].message !== newMessage.message) {
+				acceptedMessages.push(newMessage);
+			}
 		}
 	});
 

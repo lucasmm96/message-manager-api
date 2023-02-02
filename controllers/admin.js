@@ -19,7 +19,15 @@ exports.getMessageList = (req, res) => {
 };
 
 exports.postAddMessage = async (req, res) => {
-	const results = await checkSimilarity(req.body);
+	const { message, results } = await checkSimilarity(req.body);
+
+	if (results.acceptedMessages.length > 0) {
+		try {
+			await Message.insertMany(results.acceptedMessages);
+		} catch (error) {
+			res.status(500).json({ message: `Something went wrong... (${error})`, data: {} });
+		}
+	}
 	
-	res.status(200).json(results);
+	res.status(200).json({ message: message, results: results });
 };
