@@ -31,3 +31,50 @@ exports.postAddMessage = async (req, res) => {
 	
 	res.status(200).json({ message: message, results: results });
 };
+
+exports.postUpdateMessage = async (req, res) => {
+
+	const id = req.body.id;
+	const postedAt = new Date(req.body.postedAt).toISOString().slice(0,10);
+	const postUrl = req.body.postUrl ? req.body.postUrl : '';
+	
+	const fetchedMessage = await Message.findById(id)
+	
+	if (fetchedMessage.length === 0) {
+		res.status(500).json({ message: 'Record not found', data: {} });
+	} else {
+		
+		
+		try {
+			
+			const updateResult = await Message.updateOne(
+				{ _id: id },
+				{ $set: { postedAt: postedAt, postUrl: postUrl }}
+			);
+			
+			const afterUpdate = await Message.findById(id)
+			
+			res.status(200).json({ message: "The message has been successfully updated.", results: { fetchedMessage, updateResult, afterUpdate } });
+			
+		} catch (error) {
+			res.status(500).json({ message: `Something went wrong... (${error})`, data: {} });
+		}
+		
+		
+		
+		
+
+	
+	
+	
+	
+	
+	}
+
+	
+
+	
+	
+	
+	
+}
