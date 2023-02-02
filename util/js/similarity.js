@@ -42,13 +42,13 @@ exports.checkSimilarity = async (newMessages) => {
 		message = 'The request was rejected due to similarities found.';
 		return { message: message, results: { acceptedMessages, rejectedMessages } };
 	} else {
-		rejectedMessages.length = 0
+		rejectedMessages.length = 0;
 	}
 
 	const currentMessages = await Message.find();
 
 	newMessages.map((newMessage) => {
-		let addedAt = new Date().toISOString().slice(0,10);
+		let addedAt = new Date().toISOString().slice(0, 10);
 		newMessage = { ...newMessage, addedAt: addedAt, postedAt: '', postUrl: '' };
 		currentMessages.map((currentMessage) => {
 			let similarity = howSimilar(currentMessage.message, newMessage.message);
@@ -59,9 +59,9 @@ exports.checkSimilarity = async (newMessages) => {
 					ratio: `${Math.round(similarity * 100)}%`,
 				};
 				if (rejectedMessages.length > 0) {
-					if (
-						rejectedMessages[rejectedMessages.length - 1].message === newMessage.message) {
-						rejectedMessages[rejectedMessages.length - 1].similarTo.push(similarTo);
+					let rejectedMessagesItem = rejectedMessages[rejectedMessages.length - 1];
+					if (rejectedMessagesItem.message === newMessage.message) {
+						rejectedMessagesItem.similarTo.push(similarTo);
 					} else {
 						rejectedMessages.push({ message: newMessage.message, similarTo: [similarTo] });
 					}
@@ -74,7 +74,8 @@ exports.checkSimilarity = async (newMessages) => {
 		if (rejectedMessages.length === 0) {
 			acceptedMessages.push(newMessage);
 		} else {
-			if (rejectedMessages[rejectedMessages.length - 1].message !== newMessage.message) {
+			let rejectedMessagesItem = rejectedMessages[rejectedMessages.length - 1];
+			if (rejectedMessagesItem.message !== newMessage.message) {
 				acceptedMessages.push(newMessage);
 			}
 		}
