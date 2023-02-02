@@ -58,6 +58,8 @@ exports.postUpdateMessage = async (req, res) => {
 			res.status(500).json({ message: `Something went wrong... (${error})`, data: {} });
 		}
 
-		res.status(200).json({ message: 'The message has been successfully updated.', results: { fetchedMessage, afterUpdate } });
+		const fetchedUpdatedMessage = await Message.findById(id);
+
+		res.status(200).json({ message: 'The message has been successfully updated.', results: { fetchedMessage, fetchedUpdatedMessage } });
 	}
 };
