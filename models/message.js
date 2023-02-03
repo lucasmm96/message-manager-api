@@ -6,7 +6,7 @@ const messageSchema = new Schema({
 	author: { type: String, required: true },
 	addedAt: { type: Date, required: true },
 	postedAt: { type: Date, required: false },
-	postUrl: { type: Array, required: false },
+	postUrl: { type: Object, required: false },
 });
 
 module.exports = mongoose.model('Message', messageSchema);

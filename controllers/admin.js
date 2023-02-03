@@ -35,7 +35,7 @@ exports.postAddMessage = async (req, res) => {
 exports.postUpdateMessage = async (req, res) => {
 	const id = req.body.id;
 	const postedAt = new Date(req.body.postedAt).toISOString().slice(0, 10);
-	const postUrl = req.body.postUrl ? req.body.postUrl : [];
+	const postUrl = req.body.postUrl ? req.body.postUrl : {};
 
 	const fetchedMessage = await Message.findById(id);
 
@@ -43,17 +43,7 @@ exports.postUpdateMessage = async (req, res) => {
 		res.status(500).json({ message: 'Record not found', data: {} });
 	} else {
 		try {
-			if (postUrl.length > 0) {
-				postUrl.map(async (url) => {
-					await Message.updateOne({ _id: id }, { $push: { postUrl: url } });
-				});
-			}
-		} catch (error) {
-			res.status(500).json({ message: `Something went wrong... (${error})`, data: {} });
-		}
-
-		try {
-			await Message.updateOne({ _id: id }, { $set: { postedAt: postedAt } });
+			await Message.updateOne({ _id: id }, { $set: { postedAt: postedAt, postUrl: postUrl } });
 		} catch (error) {
 			res.status(500).json({ message: `Something went wrong... (${error})`, data: {} });
 		}
