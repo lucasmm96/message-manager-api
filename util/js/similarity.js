@@ -7,31 +7,31 @@ exports.checkSimilarity = async (newMessages) => {
 	const acceptedMessages = [];
 	const rejectedMessages = [];
 
-	newMessages.flatMap((value1, index) => {
-		newMessages.slice(index + 1).map((value2) => {
-			let similarity = howSimilar(value1.message, value2.message);
+	newMessages.flatMap((input01, index) => {
+		newMessages.slice(index + 1).map((input02) => {
+			let similarity = howSimilar(input01.message, input02.message);
 			if (similarity > 0.5) {
 				let similarTo = {
-					message: value1.message,
+					message: input01.message,
 					ratio: `${Math.round(similarity * 100)}%`,
 				};
 				if (rejectedMessages.length > 0) {
 					if (
 						rejectedMessages[rejectedMessages.length - 1].message ===
-						value2.message
+						input02.message
 					) {
 						rejectedMessages[rejectedMessages.length - 1].similarTo.push(
 							similarTo
 						);
 					} else {
 						rejectedMessages.push({
-							message: value2.message,
+							message: input02.message,
 							similarTo: [similarTo],
 						});
 					}
 				} else {
 					rejectedMessages.push({
-						message: value2.message,
+						message: input02.message,
 						similarTo: [similarTo],
 					});
 				}
