@@ -1,5 +1,6 @@
-const howSimilar = require('similarity');
 const Message = require('../../models/message');
+const howSimilar = require('similarity');
+const outputMessages = require('../json/messages.json').similarityOutput;
 
 exports.checkSimilarity = async (newMessages) => {
 	let message;
@@ -39,7 +40,7 @@ exports.checkSimilarity = async (newMessages) => {
 	});
 
 	if (rejectedMessages.length > 0) {
-		message = 'The request was rejected due to similarities found.';
+		message = outputMessages.rejectedInput;
 		return { message: message, results: { acceptedMessages, rejectedMessages } };
 	} else {
 		rejectedMessages.length = 0;
@@ -85,14 +86,18 @@ exports.checkSimilarity = async (newMessages) => {
 		}
 	});
 
-	if (acceptedMessages.length > 0 && rejectedMessages.length > 0) {
-		message = 'The request has been successfully processed. The accepted records are inserted. Also check the rejected ones';
-	} else if (acceptedMessages.length > 0) {
-		message = 'The request has been successfully processed an inserted.';
-	} else if (rejectedMessages.length > 0) {
-		message = 'The request has been successfully processed but not inserted due to duplicity. Check the list.';
+	
+	const acceptedLength = acceptedMessages.length > 0;
+	const rejectedLength = rejectedMessages.length > 0;
+	
+	if (acceptedLength && rejectedLength) {
+		message = outputMessages.rejectedAndAccepted
+	} else if (acceptedLength) {
+		message = outputMessages.justAccepted
+	} else if (rejectedLength) {
+		message = outputMessages.justRejected
 	} else {
-		message = 'The request is empty';
+		message = outputMessages.notRejectedNorAccepted
 	}
 
 	return { message: message, results: { acceptedMessages, rejectedMessages } };

@@ -1,0 +1,9 @@
+{
+  "similarityOutput": {
+    "rejectedInput": "The request was rejected due to similarities found.",
+    "rejectedAndAccepted": "The request has been successfully processed. The accepted records are inserted. Also check the rejected ones",
+    "justAccepted": "The request has been successfully processed an inserted.",
+    "justRejected": "The request has been successfully processed but not inserted due to duplicity. Check the list.",
+    "notRejectedNorAccepted": "The request is empty"
+  }
+}
