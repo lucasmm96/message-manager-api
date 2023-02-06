@@ -2,103 +2,93 @@ const Message = require('../../models/message');
 const howSimilar = require('similarity');
 const outputMessages = require('../json/messages.json').similarityOutput;
 
-exports.checkSimilarity = async (newMessages) => {
-	let message;
-	const acceptedMessages = [];
-	const rejectedMessages = [];
+const rejectMessage = (message01, message02, similarity, rejectedMessages) => {
+	let similarTo = {
+		message: message01,
+		ratio: `${Math.round(similarity * 100)}%`,
+	};
 
+	if (rejectedMessages.length > 0) {
+		let lastIndex = rejectedMessages.length - 1;
+		let lastMessage = rejectedMessages[lastIndex].message;
+
+		if (lastMessage === message02) {
+			rejectedMessages[lastIndex].similarTo.push(similarTo);
+		} else {
+			rejectedMessages.push({ message: message02, similarTo: [similarTo] });
+		}
+	} else {
+		rejectedMessages.push({ message: message02, similarTo: [similarTo] });
+	}
+	return rejectedMessages;
+};
+
+const isSimilar = (message01, message02) => {
+	let similarity = howSimilar(message01, message02);
+	return { similar: similarity > 0.5 ? true : false, similarity: similarity };
+};
+
+exports.checkSimilarity = async (newMessages) => {
+	let acceptedMessages = [];
+	let rejectedMessages = [];
+	let message;
+	let codeStatus;
+	let rejected = false;
+	
 	newMessages.flatMap((input01, index) => {
 		newMessages.slice(index + 1).map((input02) => {
-			let similarity = howSimilar(input01.message, input02.message);
-			if (similarity > 0.5) {
-				let similarTo = {
-					message: input01.message,
-					ratio: `${Math.round(similarity * 100)}%`,
-				};
-				if (rejectedMessages.length > 0) {
-					if (
-						rejectedMessages[rejectedMessages.length - 1].message ===
-						input02.message
-					) {
-						rejectedMessages[rejectedMessages.length - 1].similarTo.push(
-							similarTo
-						);
-					} else {
-						rejectedMessages.push({
-							message: input02.message,
-							similarTo: [similarTo],
-						});
-					}
-				} else {
-					rejectedMessages.push({
-						message: input02.message,
-						similarTo: [similarTo],
-					});
-				}
+			let { similar, similarity } = isSimilar(input01.message, input02.message);
+
+			if (similar) {
+				rejectedMessages = rejectMessage(input01.message, input02.message, similarity, rejectedMessages);
 			}
 		});
 	});
 
 	if (rejectedMessages.length > 0) {
-		message = outputMessages.rejectedInput;
-		return { message: message, results: { acceptedMessages, rejectedMessages } };
-	} else {
-		rejectedMessages.length = 0;
+		return { message: outputMessages.rejectedInput, codeStatus: 400, results: { acceptedMessages, rejectedMessages } };
 	}
 
-	const currentMessages = await Message.find();
+	rejectedMessages.length = 0;
+
+	const dbMessages = await Message.find();
 
 	newMessages.map((newMessage) => {
-		let addedAt = new Date().toISOString().slice(0, 10);
-		let postedAt = newMessage.postedAt ? new Date(newMessage.postedAt).toISOString().slice(0, 10) : '';
-		let postUrl = newMessage.postUrl ? newMessage.postUrl : {};
+		newMessage = {
+			...newMessage,
+			addedAt: new Date().toISOString().slice(0, 10),
+			postedAt: newMessage.postedAt ? new Date(newMessage.postedAt).toISOString().slice(0, 10) : '',
+			postUrl: newMessage.postUrl ? newMessage.postUrl : {}
+		}
 
-		newMessage = { ...newMessage, addedAt: addedAt, postedAt: postedAt, postUrl: postUrl };
-
-		currentMessages.map((currentMessage) => {
-			let similarity = howSimilar(currentMessage.message, newMessage.message);
-
-			if (similarity > 0.5) {
-				let similarTo = {
-					message: currentMessage.message,
-					ratio: `${Math.round(similarity * 100)}%`,
-				};
-				if (rejectedMessages.length > 0) {
-					let rejectedMessagesItem = rejectedMessages[rejectedMessages.length - 1];
-					if (rejectedMessagesItem.message === newMessage.message) {
-						rejectedMessagesItem.similarTo.push(similarTo);
-					} else {
-						rejectedMessages.push({ message: newMessage.message, similarTo: [similarTo] });
-					}
-				} else {
-					rejectedMessages.push({ message: newMessage.message, similarTo: [similarTo] });
-				}
+		dbMessages.map((currentMessage) => {
+			let { similar, similarity } = isSimilar(currentMessage.message, newMessage.message);
+			if (similar) {
+				rejected = true;
+				rejectedMessages = rejectMessage(currentMessage.message, newMessage.message, similarity, rejectedMessages);
 			}
 		});
-
-		if (rejectedMessages.length === 0) {
-			acceptedMessages.push(newMessage);
-		} else {
-			let rejectedMessagesItem = rejectedMessages[rejectedMessages.length - 1];
-			if (rejectedMessagesItem.message !== newMessage.message) {
-				acceptedMessages.push(newMessage);
-			}
-		}
+		
+		if (!rejected) { acceptedMessages.push(newMessage) }
+		rejected = false;
 	});
 
-	
-	const acceptedLength = acceptedMessages.length > 0;
-	const rejectedLength = rejectedMessages.length > 0;
-	
-	if (acceptedLength && rejectedLength) {
-		message = outputMessages.rejectedAndAccepted
-	} else if (acceptedLength) {
-		message = outputMessages.justAccepted
-	} else if (rejectedLength) {
-		message = outputMessages.justRejected
+	const containAccepted = acceptedMessages.length > 0;
+	const containRejected = rejectedMessages.length > 0;
+
+	if (containAccepted && containRejected) {
+		message = outputMessages.rejectedAndAccepted;
+		codeStatus = 202;
+	} else if (containAccepted) {
+		message = outputMessages.justAccepted;
+		codeStatus = 200;
+	} else if (containRejected) {
+		message = outputMessages.justRejected;
+		codeStatus = 400;
 	} else {
-		message = outputMessages.notRejectedNorAccepted
+		message = outputMessages.notRejectedNorAccepted;
+		codeStatus = 204;
 	}
 
-	return { message: message, results: { acceptedMessages, rejectedMessages } };
+	return { message: message, codeStatus: codeStatus, results: { acceptedMessages, rejectedMessages } };
 };

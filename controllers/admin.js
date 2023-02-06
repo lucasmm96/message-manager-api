@@ -19,7 +19,7 @@ exports.getMessageList = (req, res) => {
 };
 
 exports.postAddMessage = async (req, res) => {
-	const { message, results } = await checkSimilarity(req.body);
+	const { message, codeStatus, results } = await checkSimilarity(req.body);
 
 	if (results.acceptedMessages.length > 0) {
 		try {
@@ -29,7 +29,7 @@ exports.postAddMessage = async (req, res) => {
 		}
 	}
 
-	res.status(200).json({ message: message, results: results });
+	res.status(codeStatus).json({ message: message, results: results });
 };
 
 exports.postUpdateMessage = async (req, res) => {
