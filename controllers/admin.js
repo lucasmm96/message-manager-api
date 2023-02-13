@@ -28,7 +28,7 @@ exports.postAddMessage = async (req, res) => {
 		} catch (error) {
 			res
 				.status(500)
-				.json({ message: `Something went wrong... (${error})`, data: {} });
+				.json({ message: "Something went wrong...", result: `${error}` });
 		}
 	}
 
@@ -60,4 +60,20 @@ exports.postUpdateMessage = async (req, res) => {
 	}
 
 	return res.status(200).json({ message: 'Successfully updated.' });
+};
+
+exports.getDeleteMessage = async (req, res) => {
+	const ObjectId = require('mongodb').ObjectId;
+	const id = new ObjectId(req.params.messageId);
+
+	try {
+		const result = await Message.deleteOne({ _id: id });
+		return res
+			.status(200)
+			.json({ message: 'Successfully deleted.', result: result });
+	} catch (error) {
+		return res
+			.status(500)
+			.json({ message: 'Something went wrong...', result: `${error}` });
+	}
 };
