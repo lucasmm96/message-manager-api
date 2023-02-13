@@ -7,6 +7,6 @@ router.get('/message/find/:messageId', adminController.getMessageById);
 router.get('/message/list', adminController.getMessageList);
 router.post('/message/add', isBodyArray, adminController.postAddMessage);
 router.post('/message/update', isBodyArray ,adminController.postUpdateMessage);
-router.get('/message/delete/:messageId', adminController.getDeleteMessage)
+router.get('/message/delete/:messageId', isBodyArray, adminController.getDeleteMessage)
 
 module.exports = router;

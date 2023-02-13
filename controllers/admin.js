@@ -1,6 +1,8 @@
 const Message = require('../models/message');
 const checkSimilarity = require('../util/js/similarity');
 const formatDate = require('../util/js/formatDate');
+const resMessages = require('../util/json/messages.json');
+const codeStatusHandler = require('../util/js/codeStatusHandler');
 
 exports.getMessageById = (req, res) => {
 	const id = req.params.messageId;
@@ -28,7 +30,7 @@ exports.postAddMessage = async (req, res) => {
 		} catch (error) {
 			res
 				.status(500)
-				.json({ message: "Something went wrong...", result: `${error}` });
+				.json({ message: 'Something went wrong...', result: `${error}` });
 		}
 	}
 
@@ -40,18 +42,25 @@ exports.postUpdateMessage = async (req, res) => {
 	const ObjectId = require('mongodb').ObjectId;
 
 	let validUpdates = [];
+	let accepted = false;
+	let rejected = false;
+
 	try {
 		validUpdates = await Promise.all(
 			input.map(async (inputItem) => {
 				let fetchedItem = await Message.findById(new ObjectId(inputItem.id));
 				if (fetchedItem) {
+					accepted = true;
 					let currentId = new ObjectId(inputItem.id);
 					let updates = {
 						postedAt: inputItem.postedAt ? formatDate(inputItem.postedAt) : fetchedItem.postedAt,
-						postUrl: inputItem.postUrl ? inputItem.postUrl : fetchedItem.postUrl
+						postUrl: inputItem.postUrl ? inputItem.postUrl : fetchedItem.postUrl,
 					};
-
 					await Message.updateOne({ _id: currentId }, { $set: updates });
+					return { id: inputItem.id, status: 'UPDATED' };
+				} else {
+					rejected = true;
+					return { id: inputItem.id, status: 'NOT FOUND' };
 				}
 			})
 		);
@@ -59,21 +68,38 @@ exports.postUpdateMessage = async (req, res) => {
 		return res.status(500).json({ error: `${error}` });
 	}
 
-	return res.status(200).json({ message: 'Successfully updated.' });
+	const { message, codeStatus } = codeStatusHandler(accepted, rejected, resMessages.updateOutput);
+
+	return res.status(codeStatus).json({ message: message, result: validUpdates });
 };
 
 exports.getDeleteMessage = async (req, res) => {
+	const input = req.body;
 	const ObjectId = require('mongodb').ObjectId;
-	const id = new ObjectId(req.params.messageId);
+
+	let validDeletes = [];
+	let accepted = false;
+	let rejected = false;
 
 	try {
-		const result = await Message.deleteOne({ _id: id });
-		return res
-			.status(200)
-			.json({ message: 'Successfully deleted.', result: result });
+		validDeletes = await Promise.all(
+			input.map(async (inputItem) => {
+				let fetchedItem = await Message.findById(new ObjectId(inputItem.id));
+				if (fetchedItem) {
+					accepted = true;
+					await Message.deleteOne({ _id: inputItem.id });
+					return { id: inputItem.id, status: 'DELETED' };
+				} else {
+					rejected = true;
+					return { id: inputItem.id, status: 'NOT FOUND' };
+				}
+			})
+		);
 	} catch (error) {
-		return res
-			.status(500)
-			.json({ message: 'Something went wrong...', result: `${error}` });
+		return res.status(500).json({ error: `${error}` });
 	}
+
+	const { message, codeStatus } = codeStatusHandler(accepted, rejected, resMessages.deleteOutput);
+
+	return res.status(codeStatus).json({ message: message, result: validDeletes });
 };

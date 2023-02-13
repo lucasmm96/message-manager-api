@@ -11,5 +11,11 @@
 		"justAccepted": "The request has been successfully processed.",
 		"justRejected": "The request has been rejected. The id was not found.",
 		"notRejectedNorAccepted": "The request is empty"
+	},
+	"deleteOutput": {
+		"rejectedAndAccepted": "The request has been successfully processed. Some records were rejected.",
+		"justAccepted": "The request has been successfully processed.",
+		"justRejected": "The request has been rejected. The id was not found.",
+		"notRejectedNorAccepted": "The request is empty"
 	}
 }
