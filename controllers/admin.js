@@ -1,5 +1,6 @@
 const Message = require('../models/message');
-const { checkSimilarity } = require('../util/js/similarity');
+const checkSimilarity = require('../util/js/similarity');
+const formatDate = require('../util/js/formatDate');
 
 exports.getMessageById = (req, res) => {
 	const id = req.params.messageId;
@@ -25,7 +26,9 @@ exports.postAddMessage = async (req, res) => {
 		try {
 			await Message.insertMany(results.acceptedMessages);
 		} catch (error) {
-			res.status(500).json({ message: `Something went wrong... (${error})`, data: {} });
+			res
+				.status(500)
+				.json({ message: `Something went wrong... (${error})`, data: {} });
 		}
 	}
 
@@ -33,23 +36,28 @@ exports.postAddMessage = async (req, res) => {
 };
 
 exports.postUpdateMessage = async (req, res) => {
-	const id = req.body.id;
-	const postedAt = new Date(req.body.postedAt).toISOString().slice(0, 10);
-	const postUrl = req.body.postUrl ? req.body.postUrl : {};
+	const input = req.body;
+	const ObjectId = require('mongodb').ObjectId;
 
-	const fetchedMessage = await Message.findById(id);
+	let validUpdates = [];
+	try {
+		validUpdates = await Promise.all(
+			input.map(async (inputItem) => {
+				let fetchedItem = await Message.findById(new ObjectId(inputItem.id));
+				if (fetchedItem) {
+					let currentId = new ObjectId(inputItem.id);
+					let updates = {
+						postedAt: inputItem.postedAt ? formatDate(inputItem.postedAt) : fetchedItem.postedAt,
+						postUrl: inputItem.postUrl ? inputItem.postUrl : fetchedItem.postUrl
+					};
 
-	if (fetchedMessage.length === 0) {
-		res.status(500).json({ message: 'Record not found', data: {} });
-	} else {
-		try {
-			await Message.updateOne({ _id: id }, { $set: { postedAt: postedAt, postUrl: postUrl } });
-		} catch (error) {
-			res.status(500).json({ message: `Something went wrong... (${error})`, data: {} });
-		}
-
-		const fetchedUpdatedMessage = await Message.findById(id);
-
-		res.status(200).json({ message: 'The message has been successfully updated.', results: { fetchedMessage, fetchedUpdatedMessage } });
+					await Message.updateOne({ _id: currentId }, { $set: updates });
+				}
+			})
+		);
+	} catch (error) {
+		return res.status(500).json({ error: `${error}` });
 	}
+
+	return res.status(200).json({ message: 'Successfully updated.' });
 };
