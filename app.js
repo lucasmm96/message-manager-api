@@ -12,7 +12,7 @@ const adminRoute = require('./routes/admin');
 
 app.use(adminRoute);
 app.use((req, res) => {
-	res.status(404).json({ message: 'Something went wrong...', data: {} });
+	res.status(404).json({ message: 'Route not found.' });
 });
 
 mongoose
