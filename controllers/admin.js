@@ -13,12 +13,18 @@ exports.getMessageById = (req, res) => {
 		.catch((err) => console.log(err));
 };
 
-exports.getMessageList = (req, res) => {
-	Message.find()
-		.then((data) => {
-			res.status(200).json(data);
-		})
-		.catch((err) => console.log(err));
+exports.getMessageList = async (req, res) => {
+	try {
+		const data = await Message.find();
+		const formattedData = data.map((item) => ({
+			...item._doc,
+			addedAt: item._doc.addedAt.toISOString().slice(0, 10),
+			postedAt: item._doc.postedAt.toISOString().slice(0, 10),
+		}));
+		res.status(200).json(formattedData);
+	} catch (error) {
+		res.status(500).json({ message: 'Something went wrong...', result: `${error}` });
+	}
 };
 
 exports.postAddMessage = async (req, res) => {
@@ -28,9 +34,7 @@ exports.postAddMessage = async (req, res) => {
 		try {
 			await Message.insertMany(results.acceptedMessages);
 		} catch (error) {
-			res
-				.status(500)
-				.json({ message: 'Something went wrong...', result: `${error}` });
+			res.status(500).json({ message: 'Something went wrong...', result: `${error}` });
 		}
 	}
 
