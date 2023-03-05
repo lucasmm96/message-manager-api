@@ -1,12 +1,11 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+require('dotenv').config({ path: '.env.local' });
 
 const app = express();
 app.use(bodyParser.json());
 mongoose.set('strictQuery', false);
-dotenv.config();
 
 const adminRoute = require('./routes/admin');
 
