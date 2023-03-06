@@ -1,6 +1,5 @@
 const Message = require('../models/message');
 const checkSimilarity = require('../util/js/similarity');
-const formatDate = require('../util/js/formatDate');
 const resMessages = require('../util/json/messages.json');
 const codeStatusHandler = require('../util/js/codeStatusHandler');
 
@@ -23,7 +22,9 @@ exports.getMessageList = async (req, res) => {
 		}));
 		res.status(200).json(formattedData);
 	} catch (error) {
-		res.status(500).json({ message: 'Something went wrong...', result: `${error}` });
+		res
+			.status(500)
+			.json({ message: 'Something went wrong...', result: `${error}` });
 	}
 };
 
@@ -34,7 +35,9 @@ exports.postAddMessage = async (req, res) => {
 		try {
 			await Message.insertMany(results.acceptedMessages);
 		} catch (error) {
-			res.status(500).json({ message: 'Something went wrong...', result: `${error}` });
+			res
+				.status(500)
+				.json({ message: 'Something went wrong...', result: `${error}` });
 		}
 	}
 
@@ -42,39 +45,34 @@ exports.postAddMessage = async (req, res) => {
 };
 
 exports.postUpdateMessage = async (req, res) => {
-	const input = req.body;
-	const ObjectId = require('mongodb').ObjectId;
+	const messages = req.body;
+	const successUpdate = [];
+	const failedUpdate = [];
 
-	let validUpdates = [];
-	let accepted = false;
-	let rejected = false;
-
-	try {
-		validUpdates = await Promise.all(
-			input.map(async (inputItem) => {
-				let fetchedItem = await Message.findById(new ObjectId(inputItem.id));
-				if (fetchedItem) {
-					accepted = true;
-					let currentId = new ObjectId(inputItem.id);
-					let updates = {
-						postedAt: inputItem.postedAt ? formatDate(inputItem.postedAt) : fetchedItem.postedAt,
-						postUrl: inputItem.postUrl ? inputItem.postUrl : fetchedItem.postUrl,
-					};
-					await Message.updateOne({ _id: currentId }, { $set: updates });
-					return { id: inputItem.id, status: 'UPDATED' };
+	await Promise.all(
+		messages.map(async (messageItem) => {
+			try {
+				const message = await Message.findById(messageItem._id);
+				if (message) {
+					message.updateMessage({ ...messageItem });
+					successUpdate.push(messageItem._id);
 				} else {
-					rejected = true;
-					return { id: inputItem.id, status: 'NOT FOUND' };
+					failedUpdate.push(messageItem._id);
 				}
-			})
-		);
-	} catch (error) {
-		return res.status(500).json({ error: `${error}` });
-	}
+			} catch (error) {
+				console.error(error);
+				res.status(500).json({ message: 'The update has failed.' });
+			}
+		})
+	);
 
-	const { message, codeStatus } = codeStatusHandler(accepted, rejected, resMessages.updateOutput);
+	const codeStatus = codeStatusHandler(successUpdate, failedUpdate);
+	const resMessage = 'The request has been received.';
+	const resResult = { success: successUpdate, failed: failedUpdate };
 
-	return res.status(codeStatus).json({ message: message, result: validUpdates });
+	return res
+		.status(codeStatus)
+		.json({ message: resMessage, result: resResult });
 };
 
 exports.getDeleteMessage = async (req, res) => {
@@ -103,7 +101,13 @@ exports.getDeleteMessage = async (req, res) => {
 		return res.status(500).json({ error: `${error}` });
 	}
 
-	const { message, codeStatus } = codeStatusHandler(accepted, rejected, resMessages.deleteOutput);
+	const { message, codeStatus } = codeStatusHandler(
+		accepted,
+		rejected,
+		resMessages.deleteOutput
+	);
 
-	return res.status(codeStatus).json({ message: message, result: validDeletes });
+	return res
+		.status(codeStatus)
+		.json({ message: message, result: validDeletes });
 };
