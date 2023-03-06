@@ -3,13 +3,16 @@ const checkSimilarity = require('../util/js/similarity');
 const resMessages = require('../util/json/messages.json');
 const codeStatusHandler = require('../util/js/codeStatusHandler');
 
-exports.getMessageById = (req, res) => {
-	const id = req.params.messageId;
-	Message.findById(id)
-		.then((data) => {
-			res.status(200).json(data);
-		})
-		.catch((err) => console.log(err));
+exports.getMessageById = async (req, res) => {
+	try {
+		const data = await Message.findById(req.params.messageId);
+		if (data) {
+			return res.status(200).json(data);
+		}
+		return res.status(400).json({ message: 'Record not found.' });
+	} catch (error) {
+		res.status(500).json({ message: 'The request has failed.', error: error });
+	}
 };
 
 exports.getMessageList = async (req, res) => {
@@ -60,8 +63,9 @@ exports.postUpdateMessage = async (req, res) => {
 					failedUpdate.push(messageItem._id);
 				}
 			} catch (error) {
-				console.error(error);
-				res.status(500).json({ message: 'The update has failed.' });
+				res
+					.status(500)
+					.json({ message: 'The request has failed.', error: error });
 			}
 		})
 	);
