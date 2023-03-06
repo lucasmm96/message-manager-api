@@ -18,16 +18,17 @@ exports.getMessageById = async (req, res) => {
 exports.getMessageList = async (req, res) => {
 	try {
 		const data = await Message.find();
+		if (data) {
+			return res.status(200).json(data);
+		}
 		const formattedData = data.map((item) => ({
 			...item._doc,
 			addedAt: item._doc.addedAt.toISOString().slice(0, 10),
 			postedAt: item._doc.postedAt.toISOString().slice(0, 10),
 		}));
-		res.status(200).json(formattedData);
+		return res.status(200).json(formattedData);
 	} catch (error) {
-		res
-			.status(500)
-			.json({ message: 'Something went wrong...', result: `${error}` });
+		res.status(500).json({ message: 'The request has failed.', error: error });
 	}
 };
 
