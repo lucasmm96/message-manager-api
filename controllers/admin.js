@@ -19,13 +19,10 @@ exports.getMessageById = async (req, res) => {
 exports.getMessageList = async (req, res) => {
 	try {
 		const data = await Message.find();
-		if (data) {
-			return res.status(200).json(data);
-		}
 		const formattedData = data.map((item) => ({
 			...item._doc,
-			addedAt: item._doc.addedAt.toISOString().slice(0, 10),
-			postedAt: item._doc.postedAt.toISOString().slice(0, 10),
+			addedAt: formatDate(item._doc.addedAt),
+			postedAt: formatDate(item._doc.postedAt),
 		}));
 		return res.status(200).json(formattedData);
 	} catch (error) {
