@@ -1,5 +1,5 @@
 const Message = require('../models/message');
-const checkSimilarity = require('../util/js/similarity');
+const isSimilar = require('../util/js/similarity');
 const resMessages = require('../util/json/messages.json');
 const codeStatusHandler = require('../util/js/codeStatusHandler');
 
@@ -33,19 +33,33 @@ exports.getMessageList = async (req, res) => {
 };
 
 exports.postAddMessage = async (req, res) => {
-	const { message, codeStatus, results } = await checkSimilarity(req.body);
+	const messages = req.body;
+	const successInsert = [];
+	const failedInsert = [];
 
-	if (results.acceptedMessages.length > 0) {
-		try {
-			await Message.insertMany(results.acceptedMessages);
-		} catch (error) {
-			res
-				.status(500)
-				.json({ message: 'Something went wrong...', result: `${error}` });
-		}
+	try {
+		await Promise.all(
+			messages.map(async (messageItem) => {
+				const { status, data } = await isSimilar(messageItem);
+				if (status) {
+					failedInsert.push({ message: messageItem, similarity: data });
+				} else {
+					const newMessage = new Message({ ...messageItem });
+					await newMessage.save();
+					successInsert.push({ ...messageItem });
+				}
+			})
+		);
+
+		const codeStatus = codeStatusHandler(successInsert, failedInsert);
+
+		return res.status(codeStatus).json({
+			message: 'The request has been received.',
+			result: { success: successInsert, failed: failedInsert },
+		});
+	} catch (error) {
+		res.status(500).json({ message: 'The request has failed.', error: error });
 	}
-
-	res.status(codeStatus).json({ message: message, results: results });
 };
 
 exports.postUpdateMessage = async (req, res) => {
@@ -72,12 +86,11 @@ exports.postUpdateMessage = async (req, res) => {
 	);
 
 	const codeStatus = codeStatusHandler(successUpdate, failedUpdate);
-	const resMessage = 'The request has been received.';
-	const resResult = { success: successUpdate, failed: failedUpdate };
 
-	return res
-		.status(codeStatus)
-		.json({ message: resMessage, result: resResult });
+	return res.status(codeStatus).json({
+		message: 'The request has been received.',
+		result: { success: successUpdate, failed: failedUpdate },
+	});
 };
 
 exports.getDeleteMessage = async (req, res) => {
