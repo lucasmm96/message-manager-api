@@ -1,4 +1,4 @@
-function codeStatusHandler(successArray, failedArray) {
+function codeStatus(successArray, failedArray) {
 	const success = successArray.length > 0;
 	const failed = failedArray.length > 0;
 
@@ -13,4 +13,4 @@ function codeStatusHandler(successArray, failedArray) {
 	}
 }
 
-module.exports = codeStatusHandler;
+module.exports = codeStatus;
