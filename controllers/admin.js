@@ -5,15 +5,33 @@ const lastPostDate = require('../util/javascript/lastPostDate');
 const codeStatusHandler = require('../util/javascript/codeStatus');
 
 exports.getMessageById = async (req, res) => {
-	try {
-		const data = await Message.findById(req.params.messageId);
-		if (data) {
-			return res.status(200).json(data);
-		}
-		return res.status(400).json({ message: 'Record not found.' });
-	} catch (error) {
-		res.status(500).json({ message: 'The request has failed.', error: error });
-	}
+	const messagesId = req.body;
+	const sucessSearch = [];
+	const failedSearch = [];
+
+	await Promise.all(
+		messagesId.map(async (messageId) => {
+			try {
+				const message = await Message.findById(messageId);
+				if (message) {
+					sucessSearch.push(message);
+				} else {
+					failedSearch.push(messageId);
+				}
+			} catch (error) {
+				res
+					.status(500)
+					.json({ message: 'The request has failed.', error: error });
+			}
+		})
+	);
+
+	const codeStatus = codeStatusHandler(sucessSearch, failedSearch);
+
+	return res.status(codeStatus).json({
+		message: 'The request has been received.',
+		result: { success: sucessSearch, failed: failedSearch },
+	});
 };
 
 exports.getMessageList = async (req, res) => {
