@@ -1,5 +1,7 @@
 const Message = require('../models/message');
 const isSimilar = require('../util/javascript/similarity');
+const formatDate = require('../util/javascript/formatDate');
+const lastPostDate = require('../util/javascript/lastPostDate');
 const codeStatusHandler = require('../util/javascript/codeStatus');
 
 exports.getMessageById = async (req, res) => {
@@ -43,9 +45,20 @@ exports.postAddMessage = async (req, res) => {
 				if (status) {
 					failedInsert.push({ message: messageItem, similarity: data });
 				} else {
-					const newMessage = new Message({ ...messageItem });
+					const maxPostedAt = new Date(await lastPostDate());
+					const dayAfter = formatDate(
+						maxPostedAt.setDate(maxPostedAt.getDate() + 1)
+					);
+
+					const message = {
+						...messageItem,
+						addedAt: formatDate(new Date()),
+						postedAt: messageItem.postedAt ? messageItem.postedAt : dayAfter,
+					};
+
+					const newMessage = new Message(message);
 					await newMessage.save();
-					successInsert.push({ ...messageItem });
+					successInsert.push(message);
 				}
 			})
 		);
