@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const formatDate = require('../util/js/formatDate');
+const formatDate = require('../util/javascript/formatDate');
 
 const messageSchema = new Schema({
 	message: { type: String, required: true },

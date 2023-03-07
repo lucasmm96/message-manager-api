@@ -1,7 +1,6 @@
 const Message = require('../models/message');
-const isSimilar = require('../util/js/similarity');
-const resMessages = require('../util/json/messages.json');
-const codeStatusHandler = require('../util/js/codeStatus');
+const isSimilar = require('../util/javascript/similarity');
+const codeStatusHandler = require('../util/javascript/codeStatus');
 
 exports.getMessageById = async (req, res) => {
 	try {
