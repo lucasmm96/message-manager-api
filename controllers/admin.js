@@ -94,38 +94,32 @@ exports.postUpdateMessage = async (req, res) => {
 };
 
 exports.getDeleteMessage = async (req, res) => {
-	const input = req.body;
-	const ObjectId = require('mongodb').ObjectId;
+	const messages = req.body;
+	const successDelete = [];
+	const failedDelete = [];
 
-	let validDeletes = [];
-	let accepted = false;
-	let rejected = false;
-
-	try {
-		validDeletes = await Promise.all(
-			input.map(async (inputItem) => {
-				let fetchedItem = await Message.findById(new ObjectId(inputItem.id));
-				if (fetchedItem) {
-					accepted = true;
-					await Message.deleteOne({ _id: inputItem.id });
-					return { id: inputItem.id, status: 'DELETED' };
+	await Promise.all(
+		messages.map(async (messageItem) => {
+			try {
+				const message = await Message.findById(messageItem._id);
+				if (message) {
+					await Message.deleteOne({ _id: messageItem._id });
+					successDelete.push(messageItem._id);
 				} else {
-					rejected = true;
-					return { id: inputItem.id, status: 'NOT FOUND' };
+					failedDelete.push(messageItem._id);
 				}
-			})
-		);
-	} catch (error) {
-		return res.status(500).json({ error: `${error}` });
-	}
-
-	const { message, codeStatus } = codeStatusHandler(
-		accepted,
-		rejected,
-		resMessages.deleteOutput
+			} catch (error) {
+				res
+					.status(500)
+					.json({ message: 'The request has failed.', error: error });
+			}
+		})
 	);
 
-	return res
-		.status(codeStatus)
-		.json({ message: message, result: validDeletes });
+	const codeStatus = codeStatusHandler(successDelete, failedDelete);
+
+	return res.status(codeStatus).json({
+		message: 'The request has been received.',
+		result: { success: successDelete, failed: failedDelete },
+	});
 };
