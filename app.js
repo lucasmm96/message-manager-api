@@ -1,13 +1,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const mongoose = require('mongoose');
+const adminRoute = require('./routes/admin');
 require('dotenv').config({ path: '.env.local' });
 
 const app = express();
+
 app.use(bodyParser.json());
-
-const adminRoute = require('./routes/admin');
-
+app.use(cors());
 app.use(adminRoute);
 app.use((req, res) => {
 	res.status(404).json({ message: 'Route not found.' });
