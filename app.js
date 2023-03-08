@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const adminRoute = require('./routes/admin');
-require('dotenv').config({ path: '.env.local' });
+require('dotenv').config({ path: '.env.development.local' });
 
 const app = express();
 
