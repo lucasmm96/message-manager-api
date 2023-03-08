@@ -16,7 +16,7 @@ app.use((req, res) => {
 
 mongoose.set('strictQuery', true);
 mongoose
-	.connect(process.env.mongoURI)
+	.connect(process.env.MONGO_URI)
 	.then(() => {
 		app.listen(3000);
 		console.log('App running on port 3000');
