@@ -21,7 +21,7 @@ async function checkSimilarity(newRecord) {
 			let ratio = isSimilar(recordItem.message, newRecord.message).ratio;
 
 			if (status) {
-				failedInsert.push({ similarTo: newRecord.message, ratio: ratio });
+				failedInsert.push({ similarTo: recordItem.message, ratio: ratio });
 			}
 		})
 	);
