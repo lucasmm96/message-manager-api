@@ -36,7 +36,7 @@ exports.getMessageById = async (req, res) => {
 
 exports.getMessageList = async (req, res) => {
 	try {
-		const data = await Message.find();
+		const data = await Message.find().sort({ postedAt: -1 });
 		const formattedData = data.map((item) => ({
 			...item._doc,
 			addedAt: formatDate(item._doc.addedAt),
