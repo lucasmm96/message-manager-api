@@ -5,6 +5,7 @@ const authController = require('../controllers/auth');
 const isBodyArray = require('../middleware/isBodyArray');
 
 router.post('/auth/signup', authController.postSignup);
+router.post('/auth/login', authController.postLogin);
 
 router.get('/message/list', adminController.getMessageList);
 router.get('/message/find', isBodyArray, adminController.getMessageById);
