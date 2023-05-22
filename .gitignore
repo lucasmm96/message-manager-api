@@ -73,7 +73,7 @@ web_modules/
 .yarn-integrity
 
 # Environment variable files
-.env*.local
+.env*
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
