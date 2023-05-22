@@ -1,7 +1,7 @@
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-require('dotenv').config({ path: '.env.development.local' });
+require('dotenv').config();
 
 exports.postSignup = async function (req, res) {
 	let existingUser;
