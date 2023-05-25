@@ -9,12 +9,9 @@ router.post('/auth/signup', authController.postSignup);
 router.post('/auth/login', authController.postLogin);
 
 router.get('/message/list', adminController.getMessageList);
-
-router.use(checkAuth);
-
-router.get('/message/find', isBodyArray, adminController.getMessageById);
-router.post('/message/add', isBodyArray, adminController.postAddMessage);
-router.post('/message/update', isBodyArray, adminController.postUpdateMessage);
-router.post('/message/delete', isBodyArray, adminController.getDeleteMessage);
+router.get('/message/find', checkAuth, isBodyArray, adminController.getMessageById);
+router.post('/message/add', checkAuth, isBodyArray, adminController.postAddMessage);
+router.post('/message/update', checkAuth, isBodyArray, adminController.postUpdateMessage);
+router.post('/message/delete', checkAuth, isBodyArray, adminController.getDeleteMessage);
 
 module.exports = router;
