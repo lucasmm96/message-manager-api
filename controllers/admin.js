@@ -35,11 +35,16 @@ exports.postAddMessage = async (req, res) => {
         } else {
           const newMessage = new Message({ ...message.data });
           await newMessage.save();
-          await pendingMessageList.findOneAndUpdate(
-            { _id: messageItem.id, status: 'Pending' },
-            { status: 'Closed' }
+          const updatedMessage = await pendingMessageList.findOneAndUpdate(
+            { _id: messageItem.id, status: { $ne: 'Closed' } },
+            { status: messageItem.status },
+            { new: true }
           );
-          successInsert.push(message);
+          if (!updatedMessage) {
+            failedInsert.push(messageItem.id);
+          } else {
+            successInsert.push(message);
+          }
         }
       })
     );
