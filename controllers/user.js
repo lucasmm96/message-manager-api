@@ -68,7 +68,6 @@ exports.postAddMessage = async (req, res) => {
           const dayAfter = formatDate(
             maxPostedAt.setDate(maxPostedAt.getDate() + 1)
           );
-
           const message = {
             ...messageItem,
             data: {
@@ -77,7 +76,6 @@ exports.postAddMessage = async (req, res) => {
               postedAt: messageItem.postedAt ? messageItem.postedAt : dayAfter,
             },
           };
-
           const newMessage = new pendingMessageAdd(message);
           await newMessage.save();
           successInsert.push(message);
@@ -109,21 +107,17 @@ exports.postUpdateMessage = async (req, res) => {
           if (!message) {
             failedUpdate.push(messageItem.id);
           } else {
-            try {
-              const { id, data, ...messageInfo } = messageItem;
-              const newMessage = new pendingMessageUpdate({
-                ...messageInfo,
-                data: {
-                  id: messageItem.id,
-                  old: { ...message._doc },
-                  new: { ...messageItem.data, addedAt: message._doc.addedAt },
-                },
-              });
-              await newMessage.save();
-              successUpdate.push(messageItem.id);
-            } catch (error) {
-              throw error.message;
-            }
+            const { id, data, ...messageInfo } = messageItem;
+            const newMessage = new pendingMessageUpdate({
+              ...messageInfo,
+              data: {
+                id: messageItem.id,
+                old: { ...message._doc },
+                new: { ...messageItem.data, addedAt: message._doc.addedAt },
+              },
+            });
+            await newMessage.save();
+            successUpdate.push(messageItem.id);
           }
         } catch (error) {
           res
@@ -157,21 +151,17 @@ exports.postDeleteMessage = async (req, res) => {
           if (!message) {
             failedDelete.push(messageItem.id);
           } else {
-            try {
-              const { id, ...messageInfo } = messageItem;
-              const { _id, __v, ...messageData } = message._doc;
-              const newMessage = new pendingMessageDelete({
-                ...messageInfo,
-                data: {
-                  id: messageItem.id,
-                  ...messageData,
-                },
-              });
-              await newMessage.save();
-              successDelete.push(messageItem.id);
-            } catch (error) {
-              throw error.message;
-            }
+            const { id, ...messageInfo } = messageItem;
+            const { _id, __v, ...messageData } = message._doc;
+            const newMessage = new pendingMessageDelete({
+              ...messageInfo,
+              data: {
+                id: messageItem.id,
+                ...messageData,
+              },
+            });
+            await newMessage.save();
+            successDelete.push(messageItem.id);
           }
         } catch (error) {
           res
