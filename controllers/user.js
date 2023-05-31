@@ -1,4 +1,8 @@
 const Message = require('../models/message');
+const pendingMessageAdd = require('../models/pendingMessage/actions/add');
+const pendingMessageUpdate = require('../models/pendingMessage/actions/update');
+const pendingMessageDelete = require('../models/pendingMessage/actions/delete');
+
 const isSimilar = require('../util/javascript/similarity');
 const formatDate = require('../util/javascript/formatDate');
 const lastPostDate = require('../util/javascript/lastPostDate');
@@ -67,11 +71,14 @@ exports.postAddMessage = async (req, res) => {
 
           const message = {
             ...messageItem,
-            addedAt: formatDate(new Date()),
-            postedAt: messageItem.postedAt ? messageItem.postedAt : dayAfter,
+            data: {
+              ...messageItem.data,
+              addedAt: formatDate(new Date()),
+              postedAt: messageItem.postedAt ? messageItem.postedAt : dayAfter,
+            },
           };
 
-          const newMessage = new Message(message);
+          const newMessage = new pendingMessageAdd(message);
           await newMessage.save();
           successInsert.push(message);
         }
@@ -94,59 +101,93 @@ exports.postUpdateMessage = async (req, res) => {
   const successUpdate = [];
   const failedUpdate = [];
 
-  await Promise.all(
-    messages.map(async (messageItem) => {
-      try {
-        const message = await Message.findById(messageItem._id);
-        if (message) {
-          message.updateMessage({ ...messageItem });
-          successUpdate.push(messageItem._id);
-        } else {
-          failedUpdate.push(messageItem._id);
+  try {
+    await Promise.all(
+      messages.map(async (messageItem) => {
+        try {
+          const message = await Message.findById(messageItem.id);
+          if (!message) {
+            failedUpdate.push(messageItem.id);
+          } else {
+            try {
+              const { id, data, ...messageInfo } = messageItem;
+              const newMessage = new pendingMessageUpdate({
+                ...messageInfo,
+                data: {
+                  id: messageItem.id,
+                  old: { ...message._doc },
+                  new: { ...messageItem.data, addedAt: message._doc.addedAt },
+                },
+              });
+              await newMessage.save();
+              successUpdate.push(messageItem.id);
+            } catch (error) {
+              throw error.message;
+            }
+          }
+        } catch (error) {
+          res
+            .status(500)
+            .json({ message: 'The request has failed.', error: error });
         }
-      } catch (error) {
-        res
-          .status(500)
-          .json({ message: 'The request has failed.', error: error });
-      }
-    })
-  );
+      })
+    );
 
-  const codeStatus = codeStatusHandler(successUpdate, failedUpdate);
+    const codeStatus = codeStatusHandler(successUpdate, failedUpdate);
 
-  return res.status(codeStatus).json({
-    message: 'The request has been received.',
-    result: { success: successUpdate, failed: failedUpdate },
-  });
+    return res.status(codeStatus).json({
+      message: 'The request has been received.',
+      result: { success: successUpdate, failed: failedUpdate },
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'The request has failed.', error: error });
+  }
 };
 
-exports.getDeleteMessage = async (req, res) => {
+exports.postDeleteMessage = async (req, res) => {
   const messages = req.body;
   const successDelete = [];
   const failedDelete = [];
 
-  await Promise.all(
-    messages.map(async (messageItem) => {
-      try {
-        const message = await Message.findById(messageItem._id);
-        if (message) {
-          await Message.deleteOne({ _id: messageItem._id });
-          successDelete.push(messageItem._id);
-        } else {
-          failedDelete.push(messageItem._id);
+  try {
+    await Promise.all(
+      messages.map(async (messageItem) => {
+        try {
+          const message = await Message.findById(messageItem.id);
+          if (!message) {
+            failedDelete.push(messageItem.id);
+          } else {
+            try {
+              const { id, ...messageInfo } = messageItem;
+              const { _id, __v, ...messageData } = message._doc;
+              const newMessage = new pendingMessageDelete({
+                ...messageInfo,
+                data: {
+                  id: messageItem.id,
+                  ...messageData,
+                },
+              });
+              await newMessage.save();
+              successDelete.push(messageItem.id);
+            } catch (error) {
+              throw error.message;
+            }
+          }
+        } catch (error) {
+          res
+            .status(500)
+            .json({ message: 'The request has failed.', error: error });
         }
-      } catch (error) {
-        res
-          .status(500)
-          .json({ message: 'The request has failed.', error: error });
-      }
-    })
-  );
+      })
+    );
 
-  const codeStatus = codeStatusHandler(successDelete, failedDelete);
+    const codeStatus = codeStatusHandler(successDelete, failedDelete);
 
-  return res.status(codeStatus).json({
-    message: 'The request has been received.',
-    result: { success: successDelete, failed: failedDelete },
-  });
+    return res.status(codeStatus).json({
+      message: 'The request has been received.',
+      result: { success: successDelete, failed: failedDelete },
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'The request has failed.', error: error });
+  }
 };
