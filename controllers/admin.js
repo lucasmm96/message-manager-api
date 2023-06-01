@@ -49,7 +49,7 @@ exports.postAddMessage = async (req, res) => {
           const newMessage = new Message({ ...message.data });
           await newMessage.save();
           const updatedMessage = await pendingMessageList.findOneAndUpdate(
-            { _id: messageItem.id, status: { $ne: 'Closed' } },
+            { _id: messageItem.id, action: 'Add', status: { $ne: 'Closed' } },
             { status: messageItem.status },
             { new: true }
           );
@@ -70,6 +70,59 @@ exports.postAddMessage = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'The request has failed.', error: error });
+  }
+};
+
+exports.postUpdateMessage = async (req, res) => {
+  const messages = req.body;
+  const successUpdate = [];
+  const failedUpdate = [];
+
+  try {
+    await Promise.all(
+      messages.map(async (messageItem) => {
+        const pendingMessage = await pendingMessageList.find({
+          _id: messageItem.id,
+          action: 'Update',
+          status: { $ne: 'Closed' },
+        });
+        if (!pendingMessage) {
+          throw Error('Pending Message was not found.');
+        }
+
+        const pendingMessageData = pendingMessage[0]._doc.data;
+        const updatedMessage = await Message.findByIdAndUpdate(
+          pendingMessageData.id,
+          pendingMessageData.new,
+          { new: true }
+        );
+        if (!updatedMessage) {
+          throw Error('Message was not found and/or updated.');
+        }
+
+        const updatedPendingMessage = await pendingMessageList.findOneAndUpdate(
+          { _id: messageItem.id, action: 'Update', status: { $ne: 'Closed' } },
+          { status: messageItem.status },
+          { new: true }
+        );
+        if (!updatedPendingMessage) {
+          throw Error('Pending Message was not updated.');
+        }
+        successUpdate.push(messageItem);
+
+        const codeStatus = codeStatusHandler(successInsert, failedInsert);
+
+        return res.status(codeStatus).json({
+          message: 'The request has been received.',
+          result: { success: successUpdate, failed: failedUpdate },
+        });
+      })
+    );
+  } catch (error) {
+    res.status(500).json({
+      message: 'The request has failed.',
+      error: error.message || error,
+    });
   }
 };
 
