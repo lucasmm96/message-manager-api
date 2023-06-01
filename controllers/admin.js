@@ -42,7 +42,11 @@ exports.postAddMessage = async (req, res) => {
   try {
     await Promise.all(
       messages.map(async (messageItem) => {
-        const message = await pendingMessageList.findById(messageItem.id);
+        const message = await pendingMessageList.find({
+          _id: messageItem.id,
+          action: 'Add',
+          status: { $ne: 'Closed' },
+        });
         if (!message) {
           failedInsert.push(messageItem.id);
         } else {
