@@ -1,4 +1,5 @@
 const Message = require('../models/message');
+const User = require('../models/user');
 const pendingMessageAdd = require('../models/pendingMessage/actions/add');
 const pendingMessageUpdate = require('../models/pendingMessage/actions/update');
 const pendingMessageDelete = require('../models/pendingMessage/actions/delete');
@@ -7,36 +8,6 @@ const isSimilar = require('../util/javascript/similarity');
 const formatDate = require('../util/javascript/formatDate');
 const lastPostDate = require('../util/javascript/lastPostDate');
 const codeStatusHandler = require('../util/javascript/codeStatus');
-
-exports.getMessageById = async (req, res) => {
-  const messagesId = req.body;
-  const sucessSearch = [];
-  const failedSearch = [];
-
-  await Promise.all(
-    messagesId.map(async (messageId) => {
-      try {
-        const message = await Message.findById(messageId);
-        if (message) {
-          sucessSearch.push(message);
-        } else {
-          failedSearch.push(messageId);
-        }
-      } catch (error) {
-        res
-          .status(500)
-          .json({ message: 'The request has failed.', error: error });
-      }
-    })
-  );
-
-  const codeStatus = codeStatusHandler(sucessSearch, failedSearch);
-
-  return res.status(codeStatus).json({
-    message: 'The request has been received.',
-    result: { success: sucessSearch, failed: failedSearch },
-  });
-};
 
 exports.getMessageList = async (req, res) => {
   try {
@@ -49,6 +20,27 @@ exports.getMessageList = async (req, res) => {
     return res.status(200).json(formattedData);
   } catch (error) {
     res.status(500).json({ message: 'The request has failed.', error: error });
+  }
+};
+
+exports.getMessageById = async (req, res) => {
+  const messageId = req.params.messageId;
+  try {
+    const message = await Message.findById(messageId);
+
+    if (message) {
+      return res.status(200).json({
+        message: 'The request has been received.',
+        result: message,
+      });
+    } else {
+      throw Error('Message was not found.');
+    }
+  } catch (error) {
+    return res.status(500).json({
+      message: 'The request has failed.',
+      error: error.message || error,
+    });
   }
 };
 
