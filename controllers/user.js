@@ -1,8 +1,7 @@
-const Message = require('../models/message');
-const User = require('../models/user');
 const pendingMessageAdd = require('../models/pendingMessage/actions/add');
 const pendingMessageUpdate = require('../models/pendingMessage/actions/update');
 const pendingMessageDelete = require('../models/pendingMessage/actions/delete');
+const Message = require('../models/message');
 
 const isSimilar = require('../util/javascript/similarity');
 const formatDate = require('../util/javascript/formatDate');
