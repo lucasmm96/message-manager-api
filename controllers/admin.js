@@ -130,6 +130,55 @@ exports.postUpdateMessage = async (req, res) => {
   }
 };
 
+exports.postDeleteMessage = async (req, res) => {
+  const messages = req.body;
+  const successDelete = [];
+  const failedDelete = [];
+
+  try {
+    await Promise.all(
+      messages.map(async (messageItem) => {
+        const pendingMessage = await pendingMessageList.find({
+          _id: messageItem.id,
+          action: 'Delete',
+          status: { $ne: 'Closed' },
+        });
+        if (!pendingMessage) {
+          throw Error('Pending Message was not found.');
+        }
+
+        const pendingMessageData = pendingMessage[0]._doc.data;
+        const deletedMessage = await Message.findByIdAndDelete(
+          pendingMessageData.id,
+          { new: true }
+        );
+
+        const deletedPendingMessage = await pendingMessageList.findOneAndUpdate(
+          { _id: messageItem.id, action: 'Delete', status: { $ne: 'Closed' } },
+          { status: messageItem.status },
+          { new: true }
+        );
+        if (!deletedPendingMessage) {
+          throw Error('Pending Message was not deleted.');
+        }
+
+        successDelete.push(deletedMessage);
+
+        const codeStatus = codeStatusHandler(successInsert, failedInsert);
+        return res.status(codeStatus).json({
+          message: 'The request has been received.',
+          result: { success: successUpdate, failed: failedUpdate },
+        });
+      })
+    );
+  } catch (error) {
+    res.status(500).json({
+      message: 'The request has failed.',
+      error: error.message || error,
+    });
+  }
+};
+
 exports.getPendingUserList = async (req, res) => {
   try {
     const data = await pendingUserList.find();
