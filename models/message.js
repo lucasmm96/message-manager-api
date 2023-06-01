@@ -8,7 +8,10 @@ const messageSchema = new Schema({
   author: { type: String, required: true },
   addedAt: { type: Date, required: true },
   postedAt: { type: Date, required: false },
-  postUrl: { type: Object, required: false },
+  postUrl: {
+    post: { type: String, required: false },
+    story: { type: String, required: false },
+  },
 });
 
 messageSchema.methods.updateMessage = function (updatedMessage) {
