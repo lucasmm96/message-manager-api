@@ -13,7 +13,7 @@ const pendingMessageDeleteSchema = new Schema({
 });
 
 module.exports = mongoose.model(
-  'Pending-Messages',
+  'pending-delete',
   pendingMessageDeleteSchema,
   'pending-messages'
 );
