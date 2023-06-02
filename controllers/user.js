@@ -125,38 +125,26 @@ exports.postUpdateMessage = async (req, res) => {
 };
 
 exports.postDeleteMessage = async (req, res) => {
-  const messages = req.body;
+  const messageList = req.body;
   const successDelete = [];
   const failedDelete = [];
 
   try {
-    await Promise.all(
-      messages.map(async (messageItem) => {
-        try {
-          const message = await Message.findById(messageItem.id);
-          if (!message) {
-            failedDelete.push(messageItem.id);
-          } else {
-            const { id, ...messageInfo } = messageItem;
-            const { _id, __v, ...messageData } = message._doc;
-            const newMessage = new pendingMessageDelete({
-              ...messageInfo,
-              data: {
-                id: messageItem.id,
-                ...messageData,
-              },
-            });
-            await newMessage.save();
-            successDelete.push(messageItem.id);
-          }
-        } catch (error) {
-          res
-            .status(500)
-            .json({ message: 'The request has failed.', error: error });
-        }
-      })
-    );
-
+    for (const messageItem of messageList) {
+      const currentMessage = await Message.findById(messageItem.id);
+      if (!currentMessage) {
+        failedDelete.push(messageItem);
+      } else {
+        const { id, data, ...updateRequestInfo } = messageItem;
+        const { _id, __v, ...currentMessageData } = currentMessage._doc;
+        const updateRequest = new pendingMessageDelete({
+          ...updateRequestInfo,
+          data: { id: messageItem.id, ...currentMessageData },
+        });
+        await updateRequest.save();
+        successDelete.push(messageItem);
+      }
+    }
     const codeStatus = codeStatusHandler(successDelete, failedDelete);
 
     return res.status(codeStatus).json({
@@ -164,6 +152,9 @@ exports.postDeleteMessage = async (req, res) => {
       result: { success: successDelete, failed: failedDelete },
     });
   } catch (error) {
-    res.status(500).json({ message: 'The request has failed.', error: error });
+    res.status(500).json({
+      message: 'The request has failed.',
+      error: error.message || error,
+    });
   }
 };
