@@ -86,38 +86,30 @@ exports.postAddMessage = async (req, res) => {
 };
 
 exports.postUpdateMessage = async (req, res) => {
-  const messages = req.body;
+  const messageList = req.body;
   const successUpdate = [];
   const failedUpdate = [];
 
   try {
-    await Promise.all(
-      messages.map(async (messageItem) => {
-        try {
-          const message = await Message.findById(messageItem.id);
-          if (!message) {
-            failedUpdate.push(messageItem.id);
-          } else {
-            const { id, data, ...messageInfo } = messageItem;
-            const newMessage = new pendingMessageUpdate({
-              ...messageInfo,
-              data: {
-                id: messageItem.id,
-                old: { ...message._doc },
-                new: { ...messageItem.data, addedAt: message._doc.addedAt },
-              },
-            });
-            await newMessage.save();
-            successUpdate.push(messageItem.id);
-          }
-        } catch (error) {
-          res
-            .status(500)
-            .json({ message: 'The request has failed.', error: error });
-        }
-      })
-    );
-
+    for (const messageItem of messageList) {
+      const currentMessage = await Message.findById(messageItem.id);
+      if (!currentMessage) {
+        failedUpdate.push(messageItem);
+      } else {
+        const { id, data, ...updateRequestInfo } = messageItem;
+        const currentMessageData = currentMessage._doc;
+        const updateRequest = new pendingMessageUpdate({
+          ...updateRequestInfo,
+          data: {
+            id: messageItem.id,
+            old: { ...currentMessageData },
+            new: { ...messageItem.data, addedAt: currentMessageData.addedAt },
+          },
+        });
+        await updateRequest.save();
+        successUpdate.push(messageItem);
+      }
+    }
     const codeStatus = codeStatusHandler(successUpdate, failedUpdate);
 
     return res.status(codeStatus).json({
@@ -125,7 +117,10 @@ exports.postUpdateMessage = async (req, res) => {
       result: { success: successUpdate, failed: failedUpdate },
     });
   } catch (error) {
-    res.status(500).json({ message: 'The request has failed.', error: error });
+    res.status(500).json({
+      message: 'The request has failed.',
+      error: error.message || error,
+    });
   }
 };
 
