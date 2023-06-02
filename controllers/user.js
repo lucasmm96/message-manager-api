@@ -44,35 +44,32 @@ exports.getMessageById = async (req, res) => {
 };
 
 exports.postAddMessage = async (req, res) => {
-  const messages = req.body;
+  const messageList = req.body;
   const successInsert = [];
   const failedInsert = [];
 
   try {
-    await Promise.all(
-      messages.map(async (messageItem) => {
-        const { status, data } = await isSimilar(messageItem);
-        if (status) {
-          failedInsert.push({ message: messageItem, similarity: data });
-        } else {
-          const maxPostedAt = new Date(await lastPostDate());
-          const dayAfter = formatDate(
-            maxPostedAt.setDate(maxPostedAt.getDate() + 1)
-          );
-          const message = {
-            ...messageItem,
-            data: {
-              ...messageItem.data,
-              addedAt: formatDate(new Date()),
-              postedAt: messageItem.postedAt ? messageItem.postedAt : dayAfter,
-            },
-          };
-          const newMessage = new pendingMessageAdd(message);
-          await newMessage.save();
-          successInsert.push(message);
-        }
-      })
-    );
+    for (const messageItem of messageList) {
+      const { status, data } = await isSimilar(messageItem.data); //TODO: mudar de "status" para "isSimilar" dentro do modulo isSimilar
+      if (status) {
+        failedInsert.push({ message: messageItem.data, similarity: data });
+      } else {
+        const maxPostedAt = new Date(await lastPostDate());
+        const dayAfter = formatDate(
+          maxPostedAt.setDate(maxPostedAt.getDate() + 1)
+        );
+        const newMessage = new pendingMessageAdd({
+          ...messageItem,
+          data: {
+            ...messageItem.data,
+            addedAt: formatDate(new Date()),
+            postedAt: messageItem.postedAt ? messageItem.postedAt : dayAfter,
+          },
+        });
+        await newMessage.save();
+        successInsert.push(messageItem.data);
+      }
+    }
 
     const codeStatus = codeStatusHandler(successInsert, failedInsert);
 
@@ -81,7 +78,10 @@ exports.postAddMessage = async (req, res) => {
       result: { success: successInsert, failed: failedInsert },
     });
   } catch (error) {
-    res.status(500).json({ message: 'The request has failed.', error: error });
+    res.status(500).json({
+      message: 'The request has failed.',
+      error: error.message || error,
+    });
   }
 };
 
