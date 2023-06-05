@@ -3,10 +3,10 @@ const pendingMessageUpdate = require('../models/pendingMessage/actions/update');
 const pendingMessageDelete = require('../models/pendingMessage/actions/delete');
 const Message = require('../models/message');
 
-const isSimilar = require('../util/javascript/similarity');
-const formatDate = require('../util/javascript/formatDate');
-const lastPostDate = require('../util/javascript/lastPostDate');
-const codeStatusHandler = require('../util/javascript/codeStatus');
+const isSimilar = require('../util/similarity');
+const formatDate = require('../util/formatDate');
+const lastPostDate = require('../util/lastPostDate');
+const codeStatusHandler = require('../util/codeStatus');
 
 exports.getMessageList = async (req, res) => {
   try {

@@ -1,5 +1,5 @@
-const Message = require('../../models/message');
-const formatDate = require('../../util/javascript/formatDate');
+const Message = require('../models/message');
+const formatDate = require('./formatDate');
 
 async function lastPostDate() {
   const result = await Message.find({ postedAt: { $exists: true } })

@@ -2,7 +2,7 @@ const pendingMessageList = require('../models/pendingMessage/actions/list');
 const Message = require('../models/message');
 const pendingUserList = require('../models/pending-user');
 const User = require('../models/user');
-const codeStatusHandler = require('../util/javascript/codeStatus');
+const codeStatusHandler = require('../util/codeStatus');
 
 exports.getPendingMessageList = async (req, res) => {
   try {

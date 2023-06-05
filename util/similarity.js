@@ -1,4 +1,4 @@
-const Message = require('../../models/message');
+const Message = require('../models/message');
 const howSimilar = require('similarity');
 
 function isSimilar(oldMessage, newMessage) {
