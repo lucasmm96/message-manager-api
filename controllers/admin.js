@@ -1,4 +1,4 @@
-const pendingMessageList = require('../models/pendingMessage/actions/list');
+const pendingMessage = require('../models/pendingMessage/pending-message');
 const Message = require('../models/message');
 const pendingUserList = require('../models/pending-user');
 const User = require('../models/user');
@@ -8,7 +8,7 @@ const codeStatusHandler = require('../util/codeStatus');
 
 exports.getPendingMessageList = async (req, res) => {
   try {
-    const data = await pendingMessageList.find();
+    const data = await pendingMessage.find();
     return res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ message: 'The request has failed.', error: error });
@@ -18,7 +18,7 @@ exports.getPendingMessageList = async (req, res) => {
 exports.getPendingMessageById = async (req, res) => {
   const messageId = req.params.messageId;
   try {
-    const message = await pendingMessageList.findById(messageId);
+    const message = await pendingMessage.findById(messageId);
 
     if (message) {
       return res.status(200).json({
@@ -52,14 +52,14 @@ exports.postAddMessage = async (req, res) => {
           action: 'Add',
           status: { $ne: 'Closed' },
         };
-        const pendingMessage = await pendingMessageList.find(filter);
+        const pendingMessage = await pendingMessage.find(filter);
         if (pendingMessage.length === 0) {
           failedInsert.push(messageItem);
         } else {
           const newMessage = new Message(pendingMessage[0]._doc.data);
           await newMessage.save();
           const update = { status: messageItem.status };
-          await pendingMessageList.findOneAndUpdate(filter, update);
+          await pendingMessage.findOneAndUpdate(filter, update);
           successInsert.push(messageItem);
         }
       }
@@ -89,7 +89,7 @@ exports.postUpdateMessage = async (req, res) => {
         action: 'Update',
         status: { $ne: 'Closed' },
       };
-      const pendingMessage = await pendingMessageList.find(filter);
+      const pendingMessage = await pendingMessage.find(filter);
       if (pendingMessage.length === 0) {
         failedUpdate.push(messageItem);
       } else {
@@ -98,7 +98,7 @@ exports.postUpdateMessage = async (req, res) => {
           pendingMessage[0]._doc.data.new
         );
         const update = { status: messageItem.status };
-        await pendingMessageList.findOneAndUpdate(filter, update);
+        await pendingMessage.findOneAndUpdate(filter, update);
         successUpdate.push(messageItem);
       }
     }
@@ -127,7 +127,7 @@ exports.postDeleteMessage = async (req, res) => {
         action: 'Delete',
         status: { $ne: 'Closed' },
       };
-      const pendingMessage = await pendingMessageList.find(filter);
+      const pendingMessage = await pendingMessage.find(filter);
       if (pendingMessage.length === 0) {
         failedDelete.push(messageItem);
       } else {
