@@ -2,6 +2,8 @@ const pendingMessageList = require('../models/pendingMessage/actions/list');
 const Message = require('../models/message');
 const pendingUserList = require('../models/pending-user');
 const User = require('../models/user');
+
+const isSimilar = require('../util/similarity');
 const codeStatusHandler = require('../util/codeStatus');
 
 exports.getPendingMessageList = async (req, res) => {
@@ -35,93 +37,76 @@ exports.getPendingMessageById = async (req, res) => {
 };
 
 exports.postAddMessage = async (req, res) => {
-  const messages = req.body;
+  const messageList = req.body;
   const successInsert = [];
   const failedInsert = [];
 
   try {
-    await Promise.all(
-      messages.map(async (messageItem) => {
-        const message = await pendingMessageList.find({
+    for (const messageItem of messageList) {
+      const { status, data } = await isSimilar({ ...messageItem.data }); //TODO: mudar de "status" para "isSimilar" dentro do modulo isSimilar
+      if (status) {
+        failedInsert.push({ message: messageItem.data, similarity: data });
+      } else {
+        const filter = {
           _id: messageItem.id,
           action: 'Add',
           status: { $ne: 'Closed' },
-        });
-        if (!message) {
-          failedInsert.push(messageItem.id);
+        };
+        const pendingMessage = await pendingMessageList.find(filter);
+        if (pendingMessage.length === 0) {
+          failedInsert.push(messageItem);
         } else {
-          const newMessage = new Message({ ...message.data });
+          const newMessage = new Message(pendingMessage[0]._doc.data);
           await newMessage.save();
-          const updatedMessage = await pendingMessageList.findOneAndUpdate(
-            { _id: messageItem.id, action: 'Add', status: { $ne: 'Closed' } },
-            { status: messageItem.status },
-            { new: true }
-          );
-          if (!updatedMessage) {
-            failedInsert.push(messageItem.id);
-          } else {
-            successInsert.push(message);
-          }
+          const update = { status: messageItem.status };
+          await pendingMessageList.findOneAndUpdate(filter, update);
+          successInsert.push(messageItem);
         }
-      })
-    );
-
-    const codeStatus = codeStatusHandler(successInsert, failedInsert);
-
-    return res.status(codeStatus).json({
-      message: 'The request has been received.',
-      result: { success: successInsert, failed: failedInsert },
-    });
+      }
+      const codeStatus = codeStatusHandler(successInsert, failedInsert);
+      return res.status(codeStatus).json({
+        message: 'The request has been received.',
+        result: { success: successInsert, failed: failedInsert },
+      });
+    }
   } catch (error) {
-    res.status(500).json({ message: 'The request has failed.', error: error });
+    res.status(500).json({
+      message: 'The request has failed.',
+      error: error.message || error,
+    });
   }
 };
 
 exports.postUpdateMessage = async (req, res) => {
-  const messages = req.body;
+  const messageList = req.body;
   const successUpdate = [];
   const failedUpdate = [];
 
   try {
-    await Promise.all(
-      messages.map(async (messageItem) => {
-        const pendingMessage = await pendingMessageList.find({
-          _id: messageItem.id,
-          action: 'Update',
-          status: { $ne: 'Closed' },
-        });
-        if (!pendingMessage) {
-          throw Error('Pending Message was not found.');
-        }
-
-        const pendingMessageData = pendingMessage[0]._doc.data;
-        const updatedMessage = await Message.findByIdAndUpdate(
-          pendingMessageData.id,
-          pendingMessageData.new,
-          { new: true }
+    for (const messageItem of messageList) {
+      const filter = {
+        _id: messageItem.id,
+        action: 'Update',
+        status: { $ne: 'Closed' },
+      };
+      const pendingMessage = await pendingMessageList.find(filter);
+      if (pendingMessage.length === 0) {
+        failedUpdate.push(messageItem);
+      } else {
+        await Message.findByIdAndUpdate(
+          pendingMessage[0]._doc.data.id,
+          pendingMessage[0]._doc.data.new
         );
-        if (!updatedMessage) {
-          throw Error('Message was not found and/or updated.');
-        }
-
-        const updatedPendingMessage = await pendingMessageList.findOneAndUpdate(
-          { _id: messageItem.id, action: 'Update', status: { $ne: 'Closed' } },
-          { status: messageItem.status },
-          { new: true }
-        );
-        if (!updatedPendingMessage) {
-          throw Error('Pending Message was not updated.');
-        }
+        const update = { status: messageItem.status };
+        await pendingMessageList.findOneAndUpdate(filter, update);
         successUpdate.push(messageItem);
-
-        const codeStatus = codeStatusHandler(successInsert, failedInsert);
-
-        return res.status(codeStatus).json({
-          message: 'The request has been received.',
-          result: { success: successUpdate, failed: failedUpdate },
-        });
-      })
-    );
+      }
+    }
+    const codeStatus = codeStatusHandler(successUpdate, failedUpdate);
+    return res.status(codeStatus).json({
+      message: 'The request has been received.',
+      result: { success: successUpdate, failed: failedUpdate },
+    });
   } catch (error) {
     res.status(500).json({
       message: 'The request has failed.',
@@ -131,46 +116,30 @@ exports.postUpdateMessage = async (req, res) => {
 };
 
 exports.postDeleteMessage = async (req, res) => {
-  const messages = req.body;
+  const messageList = req.body;
   const successDelete = [];
   const failedDelete = [];
 
   try {
-    await Promise.all(
-      messages.map(async (messageItem) => {
-        const pendingMessage = await pendingMessageList.find({
-          _id: messageItem.id,
-          action: 'Delete',
-          status: { $ne: 'Closed' },
-        });
-        if (!pendingMessage) {
-          throw Error('Pending Message was not found.');
-        }
-
-        const pendingMessageData = pendingMessage[0]._doc.data;
-        const deletedMessage = await Message.findByIdAndDelete(
-          pendingMessageData.id,
-          { new: true }
-        );
-
-        const deletedPendingMessage = await pendingMessageList.findOneAndUpdate(
-          { _id: messageItem.id, action: 'Delete', status: { $ne: 'Closed' } },
-          { status: messageItem.status },
-          { new: true }
-        );
-        if (!deletedPendingMessage) {
-          throw Error('Pending Message was not deleted.');
-        }
-
-        successDelete.push(deletedMessage);
-
-        const codeStatus = codeStatusHandler(successInsert, failedInsert);
-        return res.status(codeStatus).json({
-          message: 'The request has been received.',
-          result: { success: successUpdate, failed: failedUpdate },
-        });
-      })
-    );
+    for (const messageItem of messageList) {
+      const filter = {
+        _id: messageItem.id,
+        action: 'Delete',
+        status: { $ne: 'Closed' },
+      };
+      const pendingMessage = await pendingMessageList.find(filter);
+      if (pendingMessage.length === 0) {
+        failedDelete.push(messageItem);
+      } else {
+        await Message.findByIdAndDelete(pendingMessage[0]._doc.data.id);
+        successDelete.push(messageItem);
+      }
+    }
+    const codeStatus = codeStatusHandler(successDelete, failedDelete);
+    return res.status(codeStatus).json({
+      message: 'The request has been received.',
+      result: { success: successDelete, failed: failedDelete },
+    });
   } catch (error) {
     res.status(500).json({
       message: 'The request has failed.',
