@@ -105,6 +105,7 @@ exports.postLogin = async function (req, res) {
       {
         userId: existingUser.id,
         email: existingUser.email,
+        admin: existingUser.admin,
       },
       process.env.TOKEN_KEY,
       { expiresIn: '1h' }
