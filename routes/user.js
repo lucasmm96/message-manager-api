@@ -15,7 +15,7 @@ const isBodyArray = require('../middleware/isBodyArray');
 router.get('/message/list', userController.getMessageList);
 router.get('/message/find/:messageId', userController.getMessageById);
 router.post('/message/pending/add', checkAuth, isBodyArray, userController.postAddMessage);
-router.post('/message/pending/update', isBodyArray, userController.postUpdateMessage);
+router.post('/message/pending/update', checkAuth, isBodyArray, userController.postUpdateMessage);
 router.post('/message/pending/delete', isBodyArray, userController.postDeleteMessage);
 
 module.exports = router;

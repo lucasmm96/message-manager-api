@@ -58,24 +58,24 @@ exports.postAddMessage = async (req, res) => {
         const dayAfter = formatDate(
           maxPostedAt.setDate(maxPostedAt.getDate() + 1)
         );
-				const messageData = {
-					...messageItem,
-					addedAt: formatDate(new Date()),
-					postedAt: messageItem.postedAt ? messageItem.postedAt : dayAfter,
-				};
-        const newPendingMessage = new pendingMessageAdd({
+        const messageData = {
+          ...messageItem,
+          addedAt: formatDate(new Date()),
+          postedAt: messageItem.postedAt ? messageItem.postedAt : dayAfter,
+        };
+        const addRequest = new pendingMessageAdd({
           requesterId: req.userData.userId,
           action: 'Add',
           type: req.userData.admin ? 'Backup' : 'Approval',
           status: req.userData.admin ? 'Accepted' : 'Pending',
           data: messageData,
         });
-        await newPendingMessage.save();
-				
-				if (req.userData.admin) {
-					const newMessage = new Message(messageData);
-					await newMessage.save();
-				}
+        await addRequest.save();
+
+        if (req.userData.admin) {
+          const newMessage = new Message(messageData);
+          await newMessage.save();
+        }
 
         successInsert.push(messageItem);
       }
@@ -106,17 +106,29 @@ exports.postUpdateMessage = async (req, res) => {
       if (!currentMessage) {
         failedUpdate.push(messageItem);
       } else {
-        const { id, data, ...updateRequestInfo } = messageItem;
-        const currentMessageData = currentMessage._doc;
+        const currentMessageData = { ...currentMessage._doc };
+        const newMessageData = {
+          ...messageItem,
+          addedAt: currentMessageData.addedAt,
+					postedAt: messageItem.postedAt ? messageItem.postedAt : currentMessageData.postedAt,
+        };
         const updateRequest = new pendingMessageUpdate({
-          ...updateRequestInfo,
+          requesterId: req.userData.userId,
+          action: 'Update',
+          type: req.userData.admin ? 'Backup' : 'Approval',
+          status: req.userData.admin ? 'Accepted' : 'Pending',
           data: {
             id: messageItem.id,
-            old: { ...currentMessageData },
-            new: { ...messageItem.data, addedAt: currentMessageData.addedAt },
+            old: currentMessageData,
+            new: newMessageData,
           },
         });
         await updateRequest.save();
+
+        if (req.userData.admin) {
+          await Message.findByIdAndUpdate(messageItem.id, newMessageData);
+        }
+
         successUpdate.push(messageItem);
       }
     }
