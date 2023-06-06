@@ -50,7 +50,7 @@ exports.postAddMessage = async (req, res) => {
         const filter = {
           _id: messageItem.id,
           action: 'Add',
-          status: { $ne: 'Closed' },
+          status: { $ne: 'Accepted' },
         };
         const pendingMessage = await pendingMessage.find(filter);
         if (pendingMessage.length === 0) {
@@ -87,7 +87,7 @@ exports.postUpdateMessage = async (req, res) => {
       const filter = {
         _id: messageItem.id,
         action: 'Update',
-        status: { $ne: 'Closed' },
+        status: { $ne: 'Accepted' },
       };
       const pendingMessage = await pendingMessage.find(filter);
       if (pendingMessage.length === 0) {
@@ -125,7 +125,7 @@ exports.postDeleteMessage = async (req, res) => {
       const filter = {
         _id: messageItem.id,
         action: 'Delete',
-        status: { $ne: 'Closed' },
+        status: { $ne: 'Accepted' },
       };
       const pendingMessage = await pendingMessage.find(filter);
       if (pendingMessage.length === 0) {
