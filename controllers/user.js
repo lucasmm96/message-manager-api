@@ -50,24 +50,34 @@ exports.postAddMessage = async (req, res) => {
 
   try {
     for (const messageItem of messageList) {
-      const { status, data } = await isSimilar(messageItem.data); //TODO: mudar de "status" para "isSimilar" dentro do modulo isSimilar
+      const { status, data } = await isSimilar(messageItem); //TODO: mudar de "status" para "isSimilar" dentro do modulo isSimilar
       if (status) {
-        failedInsert.push({ message: messageItem.data, similarity: data });
+        failedInsert.push({ message: messageItem, similarity: data });
       } else {
         const maxPostedAt = new Date(await lastPostDate());
         const dayAfter = formatDate(
           maxPostedAt.setDate(maxPostedAt.getDate() + 1)
         );
-        const newMessage = new pendingMessageAdd({
-          ...messageItem,
-          data: {
-            ...messageItem.data,
-            addedAt: formatDate(new Date()),
-            postedAt: messageItem.postedAt ? messageItem.postedAt : dayAfter,
-          },
+				const messageData = {
+					...messageItem,
+					addedAt: formatDate(new Date()),
+					postedAt: messageItem.postedAt ? messageItem.postedAt : dayAfter,
+				};
+        const newPendingMessage = new pendingMessageAdd({
+          requesterId: req.userData.userId,
+          action: 'Add',
+          type: req.userData.admin ? 'Backup' : 'Approval',
+          status: req.userData.admin ? 'Accepted' : 'Pending',
+          data: messageData,
         });
-        await newMessage.save();
-        successInsert.push(messageItem.data);
+        await newPendingMessage.save();
+				
+				if (req.userData.admin) {
+					const newMessage = new Message(messageData);
+					await newMessage.save();
+				}
+
+        successInsert.push(messageItem);
       }
     }
 
