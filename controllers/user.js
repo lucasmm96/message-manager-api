@@ -3,7 +3,7 @@ const pendingMessageUpdate = require('../models/pendingMessage/actions/update');
 const pendingMessageDelete = require('../models/pendingMessage/actions/delete');
 const Message = require('../models/message');
 
-const isSimilar = require('../util/similarity');
+const similarity = require('../util/similarity');
 const formatDate = require('../util/formatDate');
 const lastPostDate = require('../util/lastPostDate');
 const codeStatusHandler = require('../util/codeStatus');
@@ -50,8 +50,8 @@ exports.postAddMessage = async (req, res) => {
 
   try {
     for (const messageItem of messageList) {
-      const { status, data } = await isSimilar(messageItem); //TODO: mudar de "status" para "isSimilar" dentro do modulo isSimilar
-      if (status) {
+      const { isSimilar, data } = await similarity(messageItem);
+      if (isSimilar) {
         failedInsert.push({ message: messageItem, similarity: data });
       } else {
         const maxPostedAt = new Date(await lastPostDate());

@@ -1,12 +1,12 @@
 const Message = require('../models/message');
 const howSimilar = require('similarity');
 
-function isSimilar(oldMessage, newMessage) {
+function similarity(oldMessage, newMessage) {
   let similarity = howSimilar(oldMessage, newMessage);
   if (similarity > 0.5) {
-    return { status: true, ratio: `${Math.round(similarity * 100)}%` };
+    return { isSimilar: true, ratio: `${Math.round(similarity * 100)}%` };
   } else {
-    return { status: false, ratio: `${Math.round(similarity * 100)}%` };
+    return { isSimilar: false, ratio: `${Math.round(similarity * 100)}%` };
   }
 }
 
@@ -17,10 +17,8 @@ async function checkSimilarity(newRecord) {
 
   await Promise.all(
     records.map(async (recordItem) => {
-      let status = isSimilar(recordItem.message, newRecord.message).status;
-      let ratio = isSimilar(recordItem.message, newRecord.message).ratio;
-
-      if (status) {
+      let { isSimilar, ratio } = similarity(recordItem.message, newRecord.message);
+      if (isSimilar) {
         failedInsert.push({ similarTo: recordItem.message, ratio: ratio });
       }
     })
@@ -29,12 +27,12 @@ async function checkSimilarity(newRecord) {
   if (failedInsert.length === 0) {
     try {
       successInsert.push(newRecord);
-      return { status: false, data: successInsert };
+      return { isSimilar: false, data: successInsert };
     } catch (error) {
       throw new Error(error);
     }
   }
-  return { status: true, data: failedInsert };
+  return { isSimilar: true, data: failedInsert };
 }
 
 module.exports = checkSimilarity;

@@ -3,7 +3,7 @@ const Message = require('../models/message');
 const pendingUserList = require('../models/pending-user');
 const User = require('../models/user');
 
-const isSimilar = require('../util/similarity');
+const similarity = require('../util/similarity');
 const codeStatusHandler = require('../util/codeStatus');
 
 exports.getPendingMessageList = async (req, res) => {
@@ -43,8 +43,8 @@ exports.postAddMessage = async (req, res) => {
 
   try {
     for (const messageItem of messageList) {
-      const { status, data } = await isSimilar({ ...messageItem.data }); //TODO: mudar de "status" para "isSimilar" dentro do modulo isSimilar
-      if (status) {
+      const { isSimilar, data } = await similarity({ ...messageItem.data });
+      if (isSimilar) {
         failedInsert.push({ message: messageItem.data, similarity: data });
       } else {
         const filter = {
