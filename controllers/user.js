@@ -110,7 +110,9 @@ exports.postUpdateMessage = async (req, res) => {
         const newMessageData = {
           ...messageItem,
           addedAt: currentMessageData.addedAt,
-					postedAt: messageItem.postedAt ? messageItem.postedAt : currentMessageData.postedAt,
+          postedAt: messageItem.postedAt
+            ? messageItem.postedAt
+            : currentMessageData.postedAt,
         };
         const updateRequest = new pendingMessageUpdate({
           requesterId: req.userData.userId,
@@ -157,13 +159,23 @@ exports.postDeleteMessage = async (req, res) => {
       if (!currentMessage) {
         failedDelete.push(messageItem);
       } else {
-        const { id, data, ...updateRequestInfo } = messageItem;
-        const { _id, __v, ...currentMessageData } = currentMessage._doc;
-        const updateRequest = new pendingMessageDelete({
-          ...updateRequestInfo,
-          data: { id: messageItem.id, ...currentMessageData },
+        const currentMessageData = { ...currentMessage._doc };
+        const deleteRequest = new pendingMessageDelete({
+          requesterId: req.userData.userId,
+          action: 'Delete',
+          type: req.userData.admin ? 'Backup' : 'Approval',
+          status: req.userData.admin ? 'Accepted' : 'Pending',
+          data: {
+            id: messageItem.id,
+            data: currentMessageData,
+          },
         });
-        await updateRequest.save();
+        await deleteRequest.save();
+
+        if (req.userData.admin) {
+          await Message.findByIdAndDelete(messageItem.id);
+        }
+
         successDelete.push(messageItem);
       }
     }
