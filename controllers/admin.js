@@ -43,23 +43,22 @@ exports.postAddMessage = async (req, res) => {
 
   try {
     for (const messageItem of messageList) {
-      const { isSimilar, data } = await similarity({ ...messageItem.data });
-      if (isSimilar) {
-        failedInsert.push({ message: messageItem.data, similarity: data });
+      const filter = {
+        _id: messageItem.id,
+        action: 'Add',
+        status: { $ne: 'Accepted' },
+      };
+      const addRequest = await pendingMessage.find(filter);
+      if (addRequest.length === 0) {
+        failedInsert.push(messageItem);
       } else {
-        const filter = {
-          _id: messageItem.id,
-          action: 'Add',
-          status: { $ne: 'Accepted' },
-        };
-        const pendingMessage = await pendingMessage.find(filter);
-        if (pendingMessage.length === 0) {
-          failedInsert.push(messageItem);
+        const { isSimilar, data } = await similarity({ ...messageItem.data });
+        if (isSimilar) {
+          failedInsert.push({ message: messageItem.data, similarity: data });
         } else {
-          const newMessage = new Message(pendingMessage[0]._doc.data);
+          const newMessage = new Message(addRequest[0]._doc.data);
           await newMessage.save();
-          const update = { status: messageItem.status };
-          await pendingMessage.findOneAndUpdate(filter, update);
+          await pendingMessage.findOneAndUpdate(filter, { status: 'Accepted' });
           successInsert.push(messageItem);
         }
       }
