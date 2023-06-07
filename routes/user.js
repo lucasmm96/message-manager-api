@@ -5,17 +5,11 @@ const userController = require('../controllers/user');
 const checkAuth = require('../middleware/check-auth');
 const isBodyArray = require('../middleware/isBodyArray');
 
-// exemple to use checkAuth:
-// router.get('/message/list', userController.getMessageList);
-// router.use('/teste', checkAuth, (req, res) => {
-// 	res.status(201).json({message: 'OK'})
-// });
-
-
 router.get('/message/list', userController.getMessageList);
 router.get('/message/find/:messageId', userController.getMessageById);
-router.post('/message/pending/add', checkAuth, isBodyArray, userController.postAddMessage);
-router.post('/message/pending/update', checkAuth, isBodyArray, userController.postUpdateMessage);
-router.post('/message/pending/delete', checkAuth, isBodyArray, userController.postDeleteMessage);
+
+router.post('/message/add', checkAuth, isBodyArray, userController.postAddMessage);
+router.post('/message/update', checkAuth, isBodyArray, userController.postUpdateMessage);
+router.post('/message/delete', checkAuth, isBodyArray, userController.postDeleteMessage);
 
 module.exports = router;

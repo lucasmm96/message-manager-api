@@ -36,7 +36,7 @@ exports.getPendingMessageById = async (req, res) => {
   }
 };
 
-exports.postAddMessage = async (req, res) => {
+exports.postApproveAddMessage = async (req, res) => {
   const messageList = req.body;
   const successInsert = [];
   const failedInsert = [];
@@ -76,7 +76,7 @@ exports.postAddMessage = async (req, res) => {
   }
 };
 
-exports.postUpdateMessage = async (req, res) => {
+exports.postApproveUpdateMessage = async (req, res) => {
   const messageList = req.body;
   const successUpdate = [];
   const failedUpdate = [];
@@ -124,7 +124,7 @@ exports.postUpdateMessage = async (req, res) => {
   }
 };
 
-exports.postDeleteMessage = async (req, res) => {
+exports.postApproveDeleteMessage = async (req, res) => {
   const messageList = req.body;
   const successDelete = [];
   const failedDelete = [];
@@ -148,6 +148,35 @@ exports.postDeleteMessage = async (req, res) => {
     return res.status(codeStatus).json({
       message: 'The request has been received.',
       result: { success: successDelete, failed: failedDelete },
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'The request has failed.',
+      error: error.message || error,
+    });
+  }
+};
+
+exports.postRejectMessage = async (req, res) => {
+  const messageList = req.body;
+  const successReject = [];
+  const failedReject = [];
+
+  try {
+    for (const messageItem of messageList) {
+      const filter = { _id: messageItem.id, status: { $ne: 'Accepted' } };
+      const pendingRequest = await pendingMessage.find(filter);
+      if (pendingRequest.length === 0) {
+        failedReject.push(messageItem);
+      } else {
+        await pendingMessage.findOneAndUpdate(filter, { status: 'Rejected' });
+        successReject.push(messageItem);
+      }
+    }
+    const codeStatus = codeStatusHandler(successReject, failedReject);
+    return res.status(codeStatus).json({
+      message: 'The request has been received.',
+      result: { success: successReject, failed: failedReject },
     });
   } catch (error) {
     res.status(500).json({
