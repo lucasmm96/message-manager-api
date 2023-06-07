@@ -6,11 +6,11 @@ const formatDate = require('../util/formatDate');
 const messageSchema = new Schema({
   message: { type: String, required: true },
   author: { type: String, required: true },
-  addedAt: { type: Date, required: true },
+  addedAt: { type: Date, required: true, default: formatDate(new Date()) },
   postedAt: { type: Date, required: false },
   postUrl: {
-    post: { type: String, required: false },
-    story: { type: String, required: false },
+    post: { type: String, required: false, default: '' },
+    story: { type: String, required: false, default: '' },
   },
 });
 

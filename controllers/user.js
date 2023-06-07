@@ -61,7 +61,6 @@ exports.postAddMessage = async (req, res) => {
         );
         const messageData = {
           ...messageItem,
-          addedAt: formatDate(new Date()),
           postedAt: messageItem.postedAt ? messageItem.postedAt : dayAfter,
         };
         const addRequest = new pendingMessageAdd({
