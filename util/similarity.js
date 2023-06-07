@@ -10,29 +10,28 @@ function similarity(oldMessage, newMessage) {
   }
 }
 
-async function checkSimilarity(newRecord) {
-  const successInsert = [];
-  const failedInsert = [];
-  const records = await Message.find();
+async function checkSimilarity(fullData, newRecord) {
+  const successValidation = [];
+  const failedValidation = [];
 
   await Promise.all(
-    records.map(async (recordItem) => {
+    fullData.map(async (recordItem) => {
       let { isSimilar, ratio } = similarity(recordItem.message, newRecord.message);
       if (isSimilar) {
-        failedInsert.push({ similarTo: recordItem.message, ratio: ratio });
+        failedValidation.push({ similarTo: recordItem.message, ratio: ratio });
       }
     })
   );
 
-  if (failedInsert.length === 0) {
+  if (failedValidation.length === 0) {
     try {
-      successInsert.push(newRecord);
-      return { isSimilar: false, data: successInsert };
+      successValidation.push(newRecord);
+      return { isSimilar: false, data: successValidation };
     } catch (error) {
       throw new Error(error);
     }
   }
-  return { isSimilar: true, data: failedInsert };
+  return { isSimilar: true, data: failedValidation };
 }
 
 module.exports = checkSimilarity;
