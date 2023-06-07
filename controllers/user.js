@@ -50,7 +50,8 @@ exports.postAddMessage = async (req, res) => {
 
   try {
     for (const messageItem of messageList) {
-      const { isSimilar, data } = await similarity(messageItem);
+      const fullData = await Message.find();
+      const { isSimilar, data } = await similarity(fullData, messageItem);
       if (isSimilar) {
         failedInsert.push({ message: messageItem, similarity: data });
       } else {

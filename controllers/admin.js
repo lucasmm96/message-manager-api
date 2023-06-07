@@ -88,17 +88,27 @@ exports.postUpdateMessage = async (req, res) => {
         action: 'Update',
         status: { $ne: 'Accepted' },
       };
-      const pendingMessage = await pendingMessage.find(filter);
-      if (pendingMessage.length === 0) {
+      const updateRequest = await pendingMessage.find(filter);
+      if (updateRequest.length === 0) {
         failedUpdate.push(messageItem);
       } else {
-        await Message.findByIdAndUpdate(
-          pendingMessage[0]._doc.data.id,
-          pendingMessage[0]._doc.data.new
-        );
-        const update = { status: messageItem.status };
-        await pendingMessage.findOneAndUpdate(filter, update);
-        successUpdate.push(messageItem);
+        const updateRequestData = updateRequest[0]._doc.data;
+        const fullData = await Message.find()
+          .where('_id')
+          .ne(updateRequestData.id);
+        const { isSimilar, data } = await similarity(fullData, {
+          ...updateRequestData.new,
+        });
+        if (isSimilar) {
+          failedUpdate.push({ message: messageItem.data, similarity: data });
+        } else {
+          await Message.findByIdAndUpdate(
+            updateRequestData.id,
+            updateRequestData.new
+          );
+          await pendingMessage.findOneAndUpdate(filter, { status: 'Accepted' });
+          successUpdate.push(messageItem);
+        }
       }
     }
     const codeStatus = codeStatusHandler(successUpdate, failedUpdate);
