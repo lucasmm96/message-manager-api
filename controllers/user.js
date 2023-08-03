@@ -1,6 +1,7 @@
 const pendingMessageAdd = require('../models/pendingMessage/actions/add');
 const pendingMessageUpdate = require('../models/pendingMessage/actions/update');
 const pendingMessageDelete = require('../models/pendingMessage/actions/delete');
+const pendingMessage = require('../models/pendingMessage/pending-message');
 const Message = require('../models/message');
 
 const similarity = require('../util/similarity');
@@ -102,39 +103,58 @@ exports.postUpdateMessage = async (req, res) => {
 
   try {
     for (const messageItem of messageList) {
-      const currentMessage = await Message.findById(messageItem.id);
+      const currentMessage = await Message.findById(messageItem._id);
+      const currentPendingMessage = await pendingMessage.find({
+        'data.id': messageItem._id,
+        action: 'Update',
+        status: { $ne: 'Accepted' },
+      });
+
+			console.log('currentPendingMessage: ', currentPendingMessage);
+			console.log('currentPendingMessage.length: ', currentPendingMessage.length);
+
       if (!currentMessage) {
-        failedUpdate.push(messageItem);
-      } else {
-        const currentMessageData = { ...currentMessage._doc };
-        const newMessageData = {
-          ...messageItem,
-          addedAt: currentMessageData.addedAt,
-          postedAt: messageItem.postedAt
-            ? messageItem.postedAt
-            : currentMessageData.postedAt,
-        };
-        const updateRequest = new pendingMessageUpdate({
-          requesterId: req.userData.userId,
-          action: 'Update',
-          type: req.userData.admin ? 'Backup' : 'Approval',
-          status: req.userData.admin ? 'Accepted' : 'Pending',
-          data: {
-            id: messageItem.id,
-            old: currentMessageData,
-            new: newMessageData,
-          },
-        });
-        await updateRequest.save();
+				failedUpdate.push({ message: messageItem, error: 'Message not found.' });
+      } else if (currentPendingMessage.length > 0) {
+				failedUpdate.push({ message: messageItem, error: 'There is already a pending request for this record.' });
+			} else {
+				const fullData = await Message.find().where('_id').ne(messageItem._id);
+        const { isSimilar, data } = await similarity(fullData, messageItem);
 
-        if (req.userData.admin) {
-          await Message.findByIdAndUpdate(messageItem.id, newMessageData);
+        if (isSimilar) {
+          failedUpdate.push({ message: messageItem, similarity: data });
+        } else {
+          const newMessageData = {
+            ...messageItem,
+            addedAt: currentMessage._doc.addedAt,
+            postedAt: messageItem.postedAt
+              ? messageItem.postedAt
+              : currentMessage._doc.postedAt,
+          };
+          const updateRequest = new pendingMessageUpdate({
+            requesterId: req.userData.userId,
+            action: 'Update',
+            type: req.userData.admin ? 'Backup' : 'Approval',
+            status: req.userData.admin ? 'Accepted' : 'Pending',
+            data: {
+              id: messageItem._id,
+              old: { ...currentMessage._doc },
+              new: newMessageData,
+            },
+          });
+          await updateRequest.save();
+
+          if (req.userData.admin) {
+            await Message.findByIdAndUpdate(messageItem._id, newMessageData);
+          }
+
+          successUpdate.push(messageItem);
         }
-
-        successUpdate.push(messageItem);
       }
     }
     const codeStatus = codeStatusHandler(successUpdate, failedUpdate);
+
+		console.log({ success: successUpdate, failed: failedUpdate });
 
     return res.status(codeStatus).json({
       message: 'The request has been received.',
@@ -155,7 +175,7 @@ exports.postDeleteMessage = async (req, res) => {
 
   try {
     for (const messageItem of messageList) {
-      const currentMessage = await Message.findById(messageItem.id);
+      const currentMessage = await Message.findById(messageItem._id);
       if (!currentMessage) {
         failedDelete.push(messageItem);
       } else {
@@ -166,14 +186,14 @@ exports.postDeleteMessage = async (req, res) => {
           type: req.userData.admin ? 'Backup' : 'Approval',
           status: req.userData.admin ? 'Accepted' : 'Pending',
           data: {
-            id: messageItem.id,
+            id: messageItem._id,
             data: currentMessageData,
           },
         });
         await deleteRequest.save();
 
         if (req.userData.admin) {
-          await Message.findByIdAndDelete(messageItem.id);
+          await Message.findByIdAndDelete(messageItem._id);
         }
 
         successDelete.push(messageItem);
