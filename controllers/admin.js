@@ -11,7 +11,7 @@ exports.getPendingMessageList = async (req, res) => {
     const data = await pendingMessage.aggregate([
       {
         $addFields: {
-          priority: {
+          statusPriority: {
             $switch: {
               branches: [
                 { case: { $eq: ['$status', 'Pending'] }, then: 1 },
@@ -34,9 +34,9 @@ exports.getPendingMessageList = async (req, res) => {
       },
       {
         $sort: {
-          priority: 1,
-          typePriority: 1,
           requestedAt: -1,
+          statusPriority: 1,
+          typePriority: 1,
         },
       },
     ]);
