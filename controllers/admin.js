@@ -8,10 +8,41 @@ const codeStatusHandler = require('../util/codeStatus');
 
 exports.getPendingMessageList = async (req, res) => {
   try {
-    const data = await pendingMessage.find();
+    const data = await pendingMessage.aggregate([
+      {
+        $addFields: {
+          priority: {
+            $switch: {
+              branches: [
+                { case: { $eq: ['$status', 'Pending'] }, then: 1 },
+                { case: { $eq: ['$status', 'Rejected'] }, then: 2 },
+                { case: { $eq: ['$status', 'Accepted'] }, then: 3 },
+              ],
+              default: 4,
+            },
+          },
+          typePriority: {
+            $switch: {
+              branches: [
+                { case: { $eq: ['$type', 'Approval'] }, then: 1 },
+                { case: { $eq: ['$type', 'Backup'] }, then: 2 },
+              ],
+              default: 3,
+            },
+          },
+        },
+      },
+      {
+        $sort: {
+          priority: 1,
+          typePriority: 1,
+          requestedAt: -1,
+        },
+      },
+    ]);
     return res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({ message: 'The request has failed.', error: error });
+    res.status(500).json({ message: 'The request has failed.', error: error.message });
   }
 };
 
