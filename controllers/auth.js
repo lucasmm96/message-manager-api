@@ -90,7 +90,7 @@ exports.postApproveUser = async function (req, res) {
   await newUser.save();
 
   const filter = { _id: id, status: 'Pending' };
-  const update = { status: 'Accepted' };
+  const update = { status: 'Approved' };
   const options = { new: true };
 
   const updatedUser = await PendingUser.findByIdAndUpdate(
@@ -102,7 +102,7 @@ exports.postApproveUser = async function (req, res) {
   if (!updatedUser) {
     res.status(400).json({
       message: 'The request has failed.',
-      error: 'User not found or already accepted.',
+      error: 'User not found or already approved.',
     });
     return;
   }
@@ -152,7 +152,7 @@ exports.postRemoveUser = async function (req, res) {
 
   const newPendingUser = new PendingUser({
     action: 'Delete',
-    status: 'Accepted',
+    status: 'Approved',
     username: existingUser._doc.username,
     email: existingUser._doc.email,
     password: existingUser._doc.password,

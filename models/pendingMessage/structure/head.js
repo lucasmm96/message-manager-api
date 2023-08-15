@@ -3,5 +3,5 @@ module.exports = pendingMessageHead = {
 	requestedAt: { type: Date, required: true, default: Date.now },
   action: { type: String, enum: ['Add', 'Update', 'Delete'], required: true },
   type: { type: String, enum: ['Approval', 'Backup'], required: true },
-	status: { type: String, required: true, default: 'Pending' , enum: ['Pending', 'Accepted', 'Rejected']},
+	status: { type: String, required: true, default: 'Pending' , enum: ['Pending', 'Approved', 'Rejected']},
 };

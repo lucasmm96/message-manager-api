@@ -68,7 +68,7 @@ exports.postAddMessage = async (req, res) => {
           requesterId: req.userData.userId,
           action: 'Add',
           type: req.userData.admin ? 'Backup' : 'Approval',
-          status: req.userData.admin ? 'Accepted' : 'Pending',
+          status: req.userData.admin ? 'Approved' : 'Pending',
           data: messageData,
         });
         await addRequest.save();
@@ -107,7 +107,7 @@ exports.postUpdateMessage = async (req, res) => {
       const currentPendingMessage = await pendingMessage.find({
         'data.id': messageItem._id,
         action: 'Update',
-        status: { $ne: 'Accepted' },
+        status: { $ne: 'Approved' },
       });
 
 			console.log('currentPendingMessage: ', currentPendingMessage);
@@ -135,7 +135,7 @@ exports.postUpdateMessage = async (req, res) => {
             requesterId: req.userData.userId,
             action: 'Update',
             type: req.userData.admin ? 'Backup' : 'Approval',
-            status: req.userData.admin ? 'Accepted' : 'Pending',
+            status: req.userData.admin ? 'Approved' : 'Pending',
             data: {
               id: messageItem._id,
               old: { ...currentMessage._doc },
@@ -184,7 +184,7 @@ exports.postDeleteMessage = async (req, res) => {
           requesterId: req.userData.userId,
           action: 'Delete',
           type: req.userData.admin ? 'Backup' : 'Approval',
-          status: req.userData.admin ? 'Accepted' : 'Pending',
+          status: req.userData.admin ? 'Approved' : 'Pending',
           data: {
             id: messageItem._id,
             data: currentMessageData,
