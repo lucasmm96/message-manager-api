@@ -1,12 +1,10 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const formatDate = require('../util/formatDate');
-
 const messageSchema = new Schema({
   message: { type: String, required: true },
   author: { type: String, required: true },
-  addedAt: { type: Date, required: true, default: formatDate(new Date()) },
+  addedAt: { type: Date, required: true, default: Date.now },
   postedAt: { type: Date, required: false },
   postUrl: {
     post: { type: String, required: false, default: '' },

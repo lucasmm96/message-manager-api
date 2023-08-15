@@ -1,9 +1,7 @@
-const formatDate = require('../../../util/formatDate');
-
 module.exports = pendingMessageData = {
   message: { type: String, required: true },
   author: { type: String, required: true },
-  addedAt: { type: Date, required: true, default: formatDate(new Date()) },
+  addedAt: { type: Date, required: true, default: Date.now },
   postedAt: { type: Date, required: false },
   postUrl: {
     post: { type: String, required: false },
