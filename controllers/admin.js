@@ -8,6 +8,11 @@ const codeStatusHandler = require('../util/codeStatus');
 
 exports.getPendingMessageList = async (req, res) => {
   try {
+    const { page, size } = req.query; // Recebe o número da página e tamanho da página do frontend
+
+    const pageSize = parseInt(size) || 2; // Número de documentos por página
+    const pageNumber = parseInt(page) || 1; // Número da página
+
     const data = await pendingMessage.aggregate([
       {
         $addFields: {
@@ -16,7 +21,7 @@ exports.getPendingMessageList = async (req, res) => {
               branches: [
                 { case: { $eq: ['$status', 'Pending'] }, then: 1 },
                 { case: { $eq: ['$status', 'Rejected'] }, then: 2 },
-                { case: { $eq: ['$status', 'Accepted'] }, then: 3 },
+                { case: { $eq: ['$status', 'Approved'] }, then: 3 },
               ],
               default: 4,
             },
@@ -38,6 +43,12 @@ exports.getPendingMessageList = async (req, res) => {
           statusPriority: 1,
           typePriority: 1,
         },
+      },
+      {
+        $skip: (pageNumber - 1) * pageSize,
+      },
+      {
+        $limit: pageSize,
       },
     ]);
     return res.status(200).json(data);
@@ -77,7 +88,7 @@ exports.postApproveAddMessage = async (req, res) => {
       const filter = {
         _id: messageItem.id,
         action: 'Add',
-        status: { $ne: 'Accepted' },
+        status: { $ne: 'Approved' },
       };
       const addRequest = await pendingMessage.find(filter);
       if (addRequest.length === 0) {
@@ -89,7 +100,7 @@ exports.postApproveAddMessage = async (req, res) => {
         } else {
           const newMessage = new Message(addRequest[0]._doc.data);
           await newMessage.save();
-          await pendingMessage.findOneAndUpdate(filter, { status: 'Accepted' });
+          await pendingMessage.findOneAndUpdate(filter, { status: 'Approved' });
           successInsert.push(messageItem);
         }
       }
@@ -117,7 +128,7 @@ exports.postApproveUpdateMessage = async (req, res) => {
       const filter = {
         _id: messageItem.id,
         action: 'Update',
-        status: { $ne: 'Accepted' },
+        status: { $ne: 'Approved' },
       };
       const updateRequest = await pendingMessage.find(filter);
       if (updateRequest.length === 0) {
@@ -137,7 +148,7 @@ exports.postApproveUpdateMessage = async (req, res) => {
             updateRequestData.id,
             updateRequestData.new
           );
-          await pendingMessage.findOneAndUpdate(filter, { status: 'Accepted' });
+          await pendingMessage.findOneAndUpdate(filter, { status: 'Approved' });
           successUpdate.push(messageItem);
         }
       }
@@ -165,7 +176,7 @@ exports.postApproveDeleteMessage = async (req, res) => {
       const filter = {
         _id: messageItem.id,
         action: 'Delete',
-        status: { $ne: 'Accepted' },
+        status: { $ne: 'Approved' },
       };
       const pendingMessage = await pendingMessage.find(filter);
       if (pendingMessage.length === 0) {
@@ -195,7 +206,7 @@ exports.postRejectMessage = async (req, res) => {
 
   try {
     for (const messageItem of messageList) {
-      const filter = { _id: messageItem.id, status: { $ne: 'Accepted' } };
+      const filter = { _id: messageItem.id, status: { $ne: 'Approved' } };
       const pendingRequest = await pendingMessage.find(filter);
       if (pendingRequest.length === 0) {
         failedReject.push(messageItem);
