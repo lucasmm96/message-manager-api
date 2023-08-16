@@ -8,9 +8,7 @@ const pendingMessageDeleteSchema = new Schema({
   ...pendingMessageHead,
   data: {
     id: { type: String, required: true },
-    data: {
-      ...pendingMessageData,
-    },
+		...pendingMessageData,
   },
 });
 

@@ -187,7 +187,7 @@ exports.postDeleteMessage = async (req, res) => {
           status: req.userData.admin ? 'Approved' : 'Pending',
           data: {
             id: messageItem._id,
-            data: currentMessageData,
+            ...currentMessageData,
           },
         });
         await deleteRequest.save();
