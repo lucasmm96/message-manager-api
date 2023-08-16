@@ -8,10 +8,10 @@ const codeStatusHandler = require('../util/codeStatus');
 
 exports.getPendingMessageList = async (req, res) => {
   try {
-    const { page, size } = req.query; // Recebe o número da página e tamanho da página do frontend
+    const { page, size } = req.query;
 
-    const pageSize = parseInt(size) || 2; // Número de documentos por página
-    const pageNumber = parseInt(page) || 1; // Número da página
+    const pageSize = parseInt(size) || 2;
+    const pageNumber = parseInt(page) || 1;
 
     const data = await pendingMessage.aggregate([
       {
@@ -44,13 +44,15 @@ exports.getPendingMessageList = async (req, res) => {
           typePriority: 1,
         },
       },
-      {
-        $skip: (pageNumber - 1) * pageSize,
-      },
-      {
-        $limit: pageSize,
-      },
+      { $skip: (pageNumber - 1) * pageSize },
+      { $limit: pageSize },
     ]);
+
+    for (const message of data) {
+      const user = await User.findById(message.requesterId);
+      message.requesterName = user ? user.username : '';
+    }
+
     return res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ message: 'The request has failed.', error: error.message });
