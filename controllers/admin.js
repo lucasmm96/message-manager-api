@@ -9,17 +9,31 @@ const codeStatusHandler = require('../util/codeStatus');
 exports.getPendingMessageList = async (req, res) => {
   try {
     const { size, skip } = req.query;
-    const data = await pendingMessage.find().skip(skip).limit(size).exec();
+    const data = await pendingMessage.aggregate([
+      { $addFields: { requesterIdObjectId: { $toObjectId: "$requesterId" } } },
+      { $lookup: {
+          from: 'users',
+          localField: 'requesterIdObjectId',
+          foreignField: '_id',
+          as: 'userData',
+        },
+      },
+      { $unwind: '$userData' },
+      { $project: {
+          requesterId: 1,
+          action: 1,
+          type: 1,
+          status: 1,
+          data: 1,
+          requestedAt: 1,
+          requesterName: '$userData.username',
+        },
+      },
+      { $skip: parseInt(skip) },
+      { $limit: parseInt(size) },
+    ]);
 
-    const remappedData = await Promise.all(
-      data.map(async (item) => {
-        const user = await User.findById(item.requesterId);
-        const requesterName = user ? user.username : "Unknown User";
-        return { ...item._doc, requesterName };
-      })
-    );
-
-    return res.status(200).json(remappedData);
+    return res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ message: 'The request has failed.', error: error.message });
   }
