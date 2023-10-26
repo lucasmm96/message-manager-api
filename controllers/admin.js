@@ -8,51 +8,9 @@ const codeStatusHandler = require('../util/codeStatus');
 
 exports.getPendingMessageList = async (req, res) => {
   try {
-    const { page, size } = req.query;
-
-    const pageSize = parseInt(size) || 2;
-    const pageNumber = parseInt(page) || 1;
-
-    const data = await pendingMessage.aggregate([
-      {
-        $addFields: {
-          statusPriority: {
-            $switch: {
-              branches: [
-                { case: { $eq: ['$status', 'Pending'] }, then: 1 },
-                { case: { $eq: ['$status', 'Rejected'] }, then: 2 },
-                { case: { $eq: ['$status', 'Approved'] }, then: 3 },
-              ],
-              default: 4,
-            },
-          },
-          typePriority: {
-            $switch: {
-              branches: [
-                { case: { $eq: ['$type', 'Approval'] }, then: 1 },
-                { case: { $eq: ['$type', 'Backup'] }, then: 2 },
-              ],
-              default: 3,
-            },
-          },
-        },
-      },
-      {
-        $sort: {
-          requestedAt: -1,
-          statusPriority: 1,
-          typePriority: 1,
-        },
-      },
-      { $skip: (pageNumber - 1) * pageSize },
-      { $limit: pageSize },
-    ]);
-
-    for (const message of data) {
-      const user = await User.findById(message.requesterId);
-      message.requesterName = user ? user.username : '';
-    }
-
+    const { size, skip } = req.query;
+    const data = await pendingMessage.find().skip(skip).limit(size).exec();
+    
     return res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ message: 'The request has failed.', error: error.message });
