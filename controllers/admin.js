@@ -10,8 +10,16 @@ exports.getPendingMessageList = async (req, res) => {
   try {
     const { size, skip } = req.query;
     const data = await pendingMessage.find().skip(skip).limit(size).exec();
-    
-    return res.status(200).json(data);
+
+    const remappedData = await Promise.all(
+      data.map(async (item) => {
+        const user = await User.findById(item.requesterId);
+        const requesterName = user ? user.username : "Unknown User";
+        return { ...item._doc, requesterName };
+      })
+    );
+
+    return res.status(200).json(remappedData);
   } catch (error) {
     res.status(500).json({ message: 'The request has failed.', error: error.message });
   }
