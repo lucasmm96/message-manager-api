@@ -77,7 +77,9 @@ exports.postApproveAddMessage = async (req, res) => {
       if (addRequest.length === 0) {
         failedInsert.push(messageItem);
       } else {
-        const { isSimilar, data } = await similarity({ ...messageItem.data });
+        const addRequestData = addRequest[0]._doc.data;
+        const fullData = await Message.find().where('_id').ne(addRequestData.id);
+        const { isSimilar, data } = await similarity(fullData, { ...messageItem });
         if (isSimilar) {
           failedInsert.push({ message: messageItem.data, similarity: data });
         } else {
