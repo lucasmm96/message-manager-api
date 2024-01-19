@@ -117,15 +117,15 @@ exports.postUpdateMessage = async (req, res) => {
         status: { $ne: 'Approved' },
       });
 
-			console.log('currentPendingMessage: ', currentPendingMessage);
-			console.log('currentPendingMessage.length: ', currentPendingMessage.length);
+      console.log('currentPendingMessage: ', currentPendingMessage);
+      console.log('currentPendingMessage.length: ', currentPendingMessage.length);
 
       if (!currentMessage) {
-				failedUpdate.push({ message: messageItem, error: 'Message not found.' });
+        failedUpdate.push({ message: messageItem, error: 'Message not found.' });
       } else if (currentPendingMessage.length > 0) {
-				failedUpdate.push({ message: messageItem, error: 'There is already a pending request for this record.' });
-			} else {
-				const fullData = await Message.find().where('_id').ne(messageItem._id);
+        failedUpdate.push({ message: messageItem, error: 'There is already a pending request for this record.' });
+      } else {
+        const fullData = await Message.find().where('_id').ne(messageItem._id);
         const { isSimilar, data } = await similarity(fullData, messageItem);
 
         if (isSimilar) {
@@ -161,7 +161,7 @@ exports.postUpdateMessage = async (req, res) => {
     }
     const codeStatus = codeStatusHandler(successUpdate, failedUpdate);
 
-		console.log({ success: successUpdate, failed: failedUpdate });
+    console.log({ success: successUpdate, failed: failedUpdate });
 
     return res.status(codeStatus).json({
       message: 'The request has been received.',
