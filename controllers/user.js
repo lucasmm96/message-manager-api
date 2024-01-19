@@ -11,15 +11,22 @@ const codeStatusHandler = require('../util/codeStatus');
 
 exports.getMessageList = async (req, res) => {
   try {
-    const data = await Message.find().sort({ postedAt: -1 });
+    const { size, skip } = req.query;
+    const data = await Message.aggregate([
+      { $sort: { postedAt: -1 } },
+      { $skip: parseInt(skip) },
+      { $limit: parseInt(size) },
+    ]);
+
     const formattedData = data.map((item) => ({
-      ...item._doc,
-      addedAt: formatDate(item._doc.addedAt),
-      postedAt: formatDate(item._doc.postedAt),
+      ...item,
+      addedAt: formatDate(item.addedAt),
+      postedAt: formatDate(item.postedAt),
     }));
+
     return res.status(200).json(formattedData);
   } catch (error) {
-    res.status(500).json({ message: 'The request has failed.', error: error });
+    res.status(500).json({ message: 'The request has failed.', error: error.message });
   }
 };
 
