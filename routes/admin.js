@@ -1,20 +1,23 @@
 const express = require('express');
 const router = express.Router();
+
 const adminController = require('../controllers/admin');
-const authController = require('../controllers/auth');
 const checkAuth = require('../middleware/check-auth');
 const isBodyArray = require('../middleware/isBodyArray');
 
-router.post('/auth/signup', authController.postSignup);
-router.post('/auth/login', authController.postLogin);
+router.get('/message/pending/list', checkAuth, adminController.getPendingMessageList);
+router.get('/message/pending/find/:messageId', checkAuth, adminController.getPendingMessageById);
 
-router.get('/message/list', adminController.getMessageList);
+router.post('/message/approve/add', checkAuth, isBodyArray, adminController.postApproveAddMessage);
+router.post('/message/approve/update', checkAuth, isBodyArray, adminController.postApproveUpdateMessage);
+router.post('/message/approve/delete', checkAuth, isBodyArray, adminController.postApproveDeleteMessage);
 
-router.use(checkAuth);
+router.post('/message/reject', checkAuth, isBodyArray, adminController.postRejectMessage);
 
-router.get('/message/find', isBodyArray, adminController.getMessageById);
-router.post('/message/add', isBodyArray, adminController.postAddMessage);
-router.post('/message/update', isBodyArray, adminController.postUpdateMessage);
-router.post('/message/delete', isBodyArray, adminController.getDeleteMessage);
+router.get('/user/pending/list', checkAuth, adminController.getPendingUserList);
+router.get('/user/pending/find/:userId', checkAuth, adminController.getPendingUserById);
+
+router.get('/user/list', checkAuth, adminController.getUserList);
+router.get('/user/find/:userId', checkAuth, adminController.getUserById);
 
 module.exports = router;

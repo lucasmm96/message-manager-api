@@ -1,14 +1,15 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const formatDate = require('../util/javascript/formatDate');
-
 const messageSchema = new Schema({
   message: { type: String, required: true },
   author: { type: String, required: true },
-  addedAt: { type: Date, required: true },
+  addedAt: { type: Date, required: true, default: Date.now },
   postedAt: { type: Date, required: false },
-  postUrl: { type: Object, required: false },
+  postUrl: {
+    post: { type: String, required: false, default: '' },
+    story: { type: String, required: false, default: '' },
+  },
 });
 
 messageSchema.methods.updateMessage = function (updatedMessage) {

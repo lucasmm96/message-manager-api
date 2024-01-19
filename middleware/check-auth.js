@@ -11,7 +11,11 @@ module.exports = (req, res, next) => {
     token = token.split(' ')[1];
     const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
     if (!decodedToken) throw new Error('Invalid token.');
-    req.userData = { userId: decodedToken.userId };
+    req.userData = {
+      userId: decodedToken.userId,
+      email: decodedToken.email,
+      admin: decodedToken.admin,
+    };
     next();
   } catch (error) {
     res
