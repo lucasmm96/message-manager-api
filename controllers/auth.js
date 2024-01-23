@@ -46,7 +46,7 @@ exports.postSignup = async function (req, res) {
         password: newPendingUser.password,
         admin: newPendingUser.admin,
       },
-      process.env.TOKEN_KEY,
+      config.TOKEN_KEY,
       { expiresIn: '1h' }
     );
   } catch (error) {
