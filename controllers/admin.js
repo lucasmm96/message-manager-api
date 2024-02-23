@@ -29,7 +29,7 @@ exports.getPendingMessageList = async (req, res) => {
           requesterName: '$userData.username',
         },
       },
-      { $sort: { requestedAt: 1 } },
+      { $sort: { requestedAt: -1 } },
       { $skip: parseInt(skip) },
       { $limit: parseInt(size) },
     ]);
