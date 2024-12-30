@@ -11,7 +11,7 @@ const codeStatusHandler = require('../util/codeStatus');
 
 exports.getMessageList = async (req, res) => {
   try {
-    const { size, skip } = req.query;
+    const { size =20, skip = 0 } = req.query;
     const data = await Message.aggregate([
       { $sort: { postedAt: -1 } },
       { $skip: parseInt(skip) },
