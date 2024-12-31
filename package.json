@@ -34,6 +34,7 @@
     "mongodb": "^4.13.0",
     "mongoose": "^6.9.0",
     "nodemon": "^2.0.20",
-    "similarity": "^1.2.1"
+    "similarity": "^1.2.1",
+    "swagger-ui-express": "^5.0.1"
   }
 }

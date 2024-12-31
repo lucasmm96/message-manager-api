@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const userRoutes = require('./routes/user');
+const docRoutes = require('./routes/docs');
 const extraRoutes = require('./routes/extra');
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(cors());
 app.use(authRoutes);
 app.use(adminRoutes);
 app.use(userRoutes);
+app.use(docRoutes);
 app.use(extraRoutes);
 
 mongoose.set('strictQuery', true);

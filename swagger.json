@@ -1,0 +1,217 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Message Manager API",
+        "description": "This API's purpose is to provide features to store text records in a MongoDB instance in a way that duplicities can be avoided. In a simple comparison, two texts might look different but looking deeper it is possible to measure the similarity between them, and that is the goal, if there is some similarity, this API will detect it, then the user can decide what is different or not.",
+        "termsOfService": "http://localhost:3000/terms",
+        "contact": {
+            "email": "lucasmartinsmenezes@gmail.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:3000",
+            "description": "Local server"
+        },
+        {
+            "url": "https://message-manager-six.vercel.app",
+            "description": "Production server"
+        }
+    ],
+    "paths": {
+      "/message/list": {
+        "get": {
+          "summary": "Get all messages",
+          "description": "This endpoint returns all messages stored in the database.",
+          "responses": {
+            "200": {
+              "description": "A list of messages.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Message"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/message/add": {
+        "post": {
+          "summary": "Add a message",
+          "description": "This endpoint adds a message to the database.",
+          "security": [{ "bearerAuth": [] }],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Message"
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "All the messages were added.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Message"
+                  }
+                }
+              }
+            },
+            "202": {
+              "description": "Some messages were added, some were duplicated.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Message"
+                  }
+                }
+              }
+            },
+            "204": {
+              "description": "Nothing was added. The body is empty."
+            },
+            "400": {
+              "description": "Nothing was added. All messages were duplicated."
+            },
+            "500": {
+              "description": "The message was not added. Something went wrong."
+            }
+          }
+        }
+      },
+      "/message/find/{messageId}": {
+        "get": {
+          "summary": "Get a message by ID",
+          "description": "This endpoint returns a message by its ID.",
+          "parameters": [
+            {
+              "name": "messageId",
+              "in": "path",
+              "required": true,
+              "description": "The message ID.",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The request has been received.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "The request has been received."
+                      },
+                      "result": {
+                        "$ref": "#/components/definitions/Message"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "The message was not found."
+            },
+            "500": {
+              "description": "The request has failed.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "example": "The request has failed."
+                      },
+                      "error": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+        "schemas": {
+            "Message": {
+                "type": "object",
+                "properties": {
+                    "message": { 
+                        "type": "string"
+                    },
+                    "author": { 
+                        "type": "string"
+                    },
+                    "addedAt": { 
+                        "type": "string", 
+                        "format": "date"
+                    },
+                    "postedAt": { 
+                        "type": "string", 
+                        "format": "date"
+                    },
+                    "postUrl": { 
+                        "type": "object", 
+                        "properties": { 
+                            "post": { "type": "string" }, 
+                            "story": { "type": "string" } 
+                        }
+                    }
+                },
+                "required": [
+                    "message", "author"
+                ]
+            }
+        },
+        "definitions": {
+            "Message": {
+            "type": "object",
+            "properties": {
+                "id": {
+                "type": "string"
+                },
+                "content": {
+                "type": "string"
+                },
+                "addedAt": {
+                "type": "string",
+                "format": "date-time"
+                }
+            },
+            "required": [
+                "id",
+                "content",
+                "addedAt"
+            ]
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    }
+}
